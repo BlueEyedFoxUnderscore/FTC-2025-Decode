@@ -1,14 +1,14 @@
 package org.firstinspires.ftc.teamcode.opmodes.teleop;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
 import androidx.annotation.NonNull;
 
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -42,17 +42,26 @@ public class MainControl extends OpMode {
     DcMotor.Direction RF_DIR = DcMotor.Direction.REVERSE;
     DcMotor.Direction LR_DIR = DcMotor.Direction.FORWARD;
     DcMotor.Direction RR_DIR = DcMotor.Direction.REVERSE;
-    private GateSubsystem gatesub;
+    private GateSubsystem gateSubsystem;
+
+    GoBildaPinpointDriver odometry1;
+    GoBildaPinpointDriver odometry2;
 
     //private MotorGroup shooterGroup;
 
     @Override
     public void init() {
+        // Initialize odometry
+        odometry1 = hardwareMap.get(GoBildaPinpointDriver.class,"odo1");
+        odometry2 = hardwareMap.get(GoBildaPinpointDriver.class,"odo2");
+
+        // Initialize wheels
         leftFront  = hardwareMap.get(DcMotorEx.class, "leftFront");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
         leftBack   = hardwareMap.get(DcMotorEx.class, "leftBack");
         rightBack  = hardwareMap.get(DcMotorEx.class, "rightBack");
 
+        // Set directions
         leftFront.setDirection(LF_DIR);
         rightFront.setDirection(RF_DIR);
         leftBack.setDirection(LR_DIR);
@@ -71,8 +80,8 @@ public class MainControl extends OpMode {
 
         voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
 
-        gatesub = new GateSubsystem(gate);
-        shooter = new LoaderSubsystem(transfer, gatesub, intake, telemetry);
+        gateSubsystem = new GateSubsystem(gate);
+        shooter = new LoaderSubsystem(transfer, gateSubsystem, intake, telemetry);
         flywheel = new Flywheel(shooter1, shooter2, telemetry, voltageSensor);
 
         imu = hardwareMap.get(IMU.class, "imu");
@@ -96,11 +105,19 @@ public class MainControl extends OpMode {
         intake.setTargetPosition(0);
         transfer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        odometry1.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
+        odometry1.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+
+        odometry2.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
+        odometry2.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
     }
 
     private double offset = 0;
 
     public void loop() {
+        odometry1.update();
+        odometry2.update();
+
         double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
         double x = gamepad1.left_stick_x;
         double rx = -gamepad1.right_stick_x;
