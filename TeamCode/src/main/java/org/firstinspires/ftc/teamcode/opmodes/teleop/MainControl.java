@@ -2,13 +2,11 @@ package org.firstinspires.ftc.teamcode.opmodes.teleop;
 
 import androidx.annotation.NonNull;
 
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -95,12 +93,13 @@ public class MainControl extends OpMode {
             )
         );
         transfer.setDirection(DcMotorSimple.Direction.REVERSE);
+
         imuTimeout.reset();
 
         telemetry.addLine("Initialized - waiting for IMU calibration...");
         telemetry.update();
-        transfer.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, new PIDFCoefficients(20, 0, 0, 0));
-        intake.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, new PIDFCoefficients(20, 0,0, 0));
+        transfer.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, new PIDFCoefficients(13, 0, 0, 0));
+        intake.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, new PIDFCoefficients(30, 0,0, 0));
         transfer.setTargetPosition(0);
         intake.setTargetPosition(0);
         transfer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -224,7 +223,7 @@ class GateSubsystem {
     }
 
     public boolean isStable() {
-        return elapsedTime.seconds() > 0.35;
+        return elapsedTime.seconds() > 0.20;
     }
 
     public void open() {
@@ -263,10 +262,10 @@ class LoaderSubsystem {
         READY,
         PRE_INTAKE,
         INTAKE,
-        REGRESS_WAIT,
-        REGRESS,
+        WAIT_FOR_STOP_THEN_REGRESS_INTAKE,
+        WAIT_THEN_REGRESS_TRANSFER,
         LAUNCH,
-        INVALID, LAUNCH_WAIT, ADVANCE,
+        INVALID, LAUNCH_WAIT, ADVANCE, WAIT_REGRESS_THEN_OPEN_GATE, GATE_WAIT, REGRESS_GATE_WAIT_STABLE,
     }
     private final DcMotorEx transfer;
     private final DcMotorEx intake;
@@ -352,58 +351,69 @@ class LoaderSubsystem {
                     intake.setPower(0);
                     transfer.setPower(0);
                     elapsedTime.reset();
-                    state = LoaderState.REGRESS_WAIT;
+                    state = LoaderState.WAIT_FOR_STOP_THEN_REGRESS_INTAKE;
                 }
                 break;
-            case REGRESS_WAIT:
-                if (elapsedTime.seconds() > 0.25) {
-                    state = LoaderState.REGRESS;
+            case WAIT_FOR_STOP_THEN_REGRESS_INTAKE:
+                if (elapsedTime.seconds() > .05) {
+                    intake.setTargetPosition(intake.getCurrentPosition() - (int)(145.0 * .25)); //0.25
+                    intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    intake.setPower(1);
                     elapsedTime.reset();
-                    previousPositionIntake = intake.getCurrentPosition();
-                    previousPositionTransfer = transfer.getCurrentPosition();
+                    state = LoaderState.WAIT_THEN_REGRESS_TRANSFER;
                 }
                 break;
-            case REGRESS:
-                intake.setTargetPosition(previousPositionIntake - 145 / 4);
-                transfer.setTargetPosition(previousPositionTransfer - (int)(537 * 0.4));
-                intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                intake.setPower(1);
-                transfer.setPower(1);
-                if (elapsedTime.seconds() > 0.25) {
+            case WAIT_THEN_REGRESS_TRANSFER:
+                if (elapsedTime.seconds() > .1) {
+                    transfer.setTargetPosition(transfer.getCurrentPosition() - (int)(537 * .35));
+                    transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    transfer.setPower(1);
+                    state = LoaderState.WAIT_REGRESS_THEN_OPEN_GATE;
+                }
+                break;
+            case WAIT_REGRESS_THEN_OPEN_GATE:
+                if (elapsedTime.seconds() > .1) {
                     gate.open();
+                    state = LoaderState.REGRESS_GATE_WAIT_STABLE;
+                }
+                break;
+            case REGRESS_GATE_WAIT_STABLE:
+                if (gate.isStable()) {
                     state = LoaderState.READY;
                 }
                 break;
             case LAUNCH:
-                intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                //intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                transfer.setTargetPosition(transfer.getCurrentPosition() + 537 / 1);
                 transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 transfer.setPower(1);
-                transfer.setTargetPosition(previousPositionTransfer + 537 / 1);
                 elapsedTime.reset();
                 state = LoaderState.LAUNCH_WAIT;
                 break;
             case LAUNCH_WAIT:
-                if (elapsedTime.seconds() > 0.25) {
-                    if (elapsedTime.seconds() < 0.55) gate.close();
-                    if (gate.isStable()) {
-                        state = LoaderState.ADVANCE;
-                        elapsedTime.reset();
-                    }
+                if (elapsedTime.seconds() > 0.20) {
+                    gate.close();
+                    state = LoaderState.GATE_WAIT;
+                }
+                break;
+            case GATE_WAIT:
+                if (gate.isStable()) {
+                    transfer.setPower(0);
+                    intake.setPower(0);
+                    state = LoaderState.ADVANCE;
+                    elapsedTime.reset();
                 }
                 break;
             case ADVANCE:
-                transfer.setPower(0);
-                intake.setPower(0);
                 transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 transfer.setPower(0.7);
                 intake.setPower(0.7);
-                if (elapsedTime.seconds() > 0.5) {
+                if (elapsedTime.seconds() > 0.35) {
                     intake.setPower(0);
                     transfer.setPower(0);
                     elapsedTime.reset();
-                    state = LoaderState.REGRESS_WAIT;
+                    state = LoaderState.WAIT_FOR_STOP_THEN_REGRESS_INTAKE;
                 }
                 break;
         }
