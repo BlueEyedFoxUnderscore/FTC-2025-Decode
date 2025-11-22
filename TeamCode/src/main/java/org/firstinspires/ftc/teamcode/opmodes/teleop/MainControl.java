@@ -42,16 +42,16 @@ public class MainControl extends OpMode {
     DcMotor.Direction RR_DIR = DcMotor.Direction.REVERSE;
     private GateSubsystem gateSubsystem;
 
-    GoBildaPinpointDriver odometry1;
-    GoBildaPinpointDriver odometry2;
+    //GoBildaPinpointDriver odometry1;
+    //GoBildaPinpointDriver odometry2;
 
     //private MotorGroup shooterGroup;
 
     @Override
     public void init() {
         // Initialize odometry
-        odometry1 = hardwareMap.get(GoBildaPinpointDriver.class,"odo1");
-        odometry2 = hardwareMap.get(GoBildaPinpointDriver.class,"odo2");
+        //odometry1 = hardwareMap.get(GoBildaPinpointDriver.class,"odo1");
+        //odometry2 = hardwareMap.get(GoBildaPinpointDriver.class,"odo2");
 
         // Initialize wheels
         leftFront  = hardwareMap.get(DcMotorEx.class, "leftFront");
@@ -104,18 +104,18 @@ public class MainControl extends OpMode {
         intake.setTargetPosition(0);
         transfer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        odometry1.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
-        odometry1.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        //odometry1.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
+        //odometry1.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
 
-        odometry2.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
-        odometry2.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        //odometry2.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
+        //odometry2.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
     }
 
     private double offset = 0;
 
     public void loop() {
-        odometry1.update();
-        odometry2.update();
+        //odometry1.update();
+        //odometry2.update();
 
         double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
         double x = gamepad1.left_stick_x;
