@@ -160,6 +160,7 @@ public class MainControl extends OpMode {
             if (flywheel.isStable()) shooter.launch();
         } else {
             flywheel.setRequested(0, 0);
+            shooter.cancelLaunch();
         }
 
         /**/
@@ -250,6 +251,10 @@ class LoaderSubsystem {
         request = LoaderState.LAUNCH;
     }
 
+    void cancelLaunch() {
+        if(request == LoaderState.LAUNCH) request = LoaderState.INVALID;
+    }
+
     void cancelIntake() {
         if(request == LoaderState.INTAKE) request = LoaderState.INVALID;
     }
@@ -311,7 +316,6 @@ class LoaderSubsystem {
 
     LoaderState request = LoaderState.INVALID;
 
-    int previousPositionIntake;
     public void intake() {
         request = LoaderState.INTAKE;
     }
@@ -330,10 +334,7 @@ class LoaderSubsystem {
                     state = LoaderState.PRE_INTAKE;
                 }
                 if (request == LoaderState.LAUNCH) {
-                    previousPositionIntake = intake.getCurrentPosition();
-                    previousPositionTransfer = transfer.getCurrentPosition();
                     state = LoaderState.LAUNCH;
-                    request = LoaderState.INVALID;
                 }
                 break;
             case PRE_INTAKE:
@@ -365,7 +366,7 @@ class LoaderSubsystem {
                 break;
             case WAIT_THEN_REGRESS_TRANSFER:
                 if (elapsedTime.seconds() > .1) {
-                    transfer.setTargetPosition(transfer.getCurrentPosition() - (int)(537 * .35));
+                    transfer.setTargetPosition(transfer.getCurrentPosition() - (int)(537 * .45));
                     transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     transfer.setPower(1);
                     state = LoaderState.WAIT_REGRESS_THEN_OPEN_GATE;
@@ -409,7 +410,7 @@ class LoaderSubsystem {
                 intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 transfer.setPower(0.7);
                 intake.setPower(0.7);
-                if (elapsedTime.seconds() > 0.35) {
+                if (elapsedTime.seconds() > 0.45) {
                     intake.setPower(0);
                     transfer.setPower(0);
                     elapsedTime.reset();

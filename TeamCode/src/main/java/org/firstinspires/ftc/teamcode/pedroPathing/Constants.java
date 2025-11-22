@@ -25,7 +25,7 @@ public class Constants {
             .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(1.0d, 0.0d, 0.05d, 0.03d))
             .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.025d, 0.0d, 1.0E-5d, 0.6d, 0.01d))
             .headingPIDFSwitch(0.3d)
-            .centripetalScaling(0.004d);
+            .centripetalScaling(0.0004d);
     public static PathConstraints PATH_CONSTRAINTS = new PathConstraints(0.99d, 100.0d, 1.0d, 1.0d);
     public static PinpointConstants LOCALIZER_CONSTANTS = new PinpointConstants().distanceUnit(DistanceUnit.MM).forwardPodY(130.0d).strafePodX(213.0d).hardwareMapName("odo1").encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD).forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD).strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
     public static MecanumConstants DRIVE_CONSTANTS = new MecanumConstants()
