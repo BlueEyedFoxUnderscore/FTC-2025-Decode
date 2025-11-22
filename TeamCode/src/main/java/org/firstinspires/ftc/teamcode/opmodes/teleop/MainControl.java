@@ -252,11 +252,11 @@ class LoaderSubsystem {
     }
 
     void cancelLaunch() {
-        if(request == LoaderState.LAUNCH) request = LoaderState.INVALID;
+        if(request == LoaderState.LAUNCH) request = LoaderState.READY;
     }
 
     void cancelIntake() {
-        if(request == LoaderState.INTAKE) request = LoaderState.INVALID;
+        if(request == LoaderState.INTAKE) request = LoaderState.READY;
     }
 
     private enum LoaderState {
@@ -264,13 +264,54 @@ class LoaderSubsystem {
          * Initialize the subsystem. Should only be used once.
          */
         INITIALIZE,
+        /**
+         *
+         */
         READY,
+        /**
+         *
+         */
         PRE_INTAKE,
+        /**
+         *
+         */
         INTAKE,
+        /**
+         *
+         */
         WAIT_FOR_STOP_THEN_REGRESS_INTAKE,
+        /**
+         *
+         */
         WAIT_THEN_REGRESS_TRANSFER,
+        /**
+         *
+         */
         LAUNCH,
-        INVALID, LAUNCH_WAIT, ADVANCE, WAIT_REGRESS_THEN_OPEN_GATE, GATE_WAIT, REGRESS_GATE_WAIT_STABLE,
+        /**
+         *
+         */
+        INVALID,
+        /**
+         *
+         */
+        LAUNCH_WAIT,
+        /**
+         *
+         */
+        ADVANCE,
+        /**
+         *
+         */
+        WAIT_REGRESS_THEN_OPEN_GATE,
+        /**
+         *
+         */
+        GATE_WAIT,
+        /**
+         *
+         */
+        REGRESS_GATE_WAIT_STABLE, LAUNCH_NEXT, LAUNCH_WAIT_LONG,
     }
     private final DcMotorEx transfer;
     private final DcMotorEx intake;
@@ -366,7 +407,7 @@ class LoaderSubsystem {
                 break;
             case WAIT_THEN_REGRESS_TRANSFER:
                 if (elapsedTime.seconds() > .1) {
-                    transfer.setTargetPosition(transfer.getCurrentPosition() - (int)(537 * .45));
+                    transfer.setTargetPosition(transfer.getCurrentPosition() - (int)(537 * .25));
                     transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     transfer.setPower(1);
                     state = LoaderState.WAIT_REGRESS_THEN_OPEN_GATE;
@@ -383,6 +424,8 @@ class LoaderSubsystem {
                     state = LoaderState.READY;
                 }
                 break;
+
+                //
             case LAUNCH:
                 //intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 transfer.setTargetPosition(transfer.getCurrentPosition() + 537 / 1);
@@ -393,8 +436,30 @@ class LoaderSubsystem {
                 break;
             case LAUNCH_WAIT:
                 if (elapsedTime.seconds() > 0.20) {
-                    gate.close();
-                    state = LoaderState.GATE_WAIT;
+                    if (request == LoaderState.READY) {
+                        gate.close();
+                        state = LoaderState.GATE_WAIT;
+                    }
+                    else state = LoaderState.LAUNCH_NEXT;
+                }
+                break;
+            case LAUNCH_NEXT:
+                transfer.setTargetPosition(transfer.getCurrentPosition() + 537 / 1);
+                transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                intake.setTargetPosition(transfer.getCurrentPosition() + 145 / 1);
+                intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                transfer.setPower(1);
+                intake.setPower(1);
+                elapsedTime.reset();
+                state = LoaderState.LAUNCH_WAIT_LONG;
+                break;
+            case LAUNCH_WAIT_LONG:
+                if (elapsedTime.seconds() > 0.40) {
+                    if (request == LoaderState.READY) {
+                        gate.close();
+                        state = LoaderState.GATE_WAIT;
+                    }
+                    else state = LoaderState.LAUNCH_NEXT;
                 }
                 break;
             case GATE_WAIT:
