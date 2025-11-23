@@ -21,6 +21,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+
 @TeleOp//(name = "***FTC OpMode 2", group = "TeleOp")
 
 public class MainControl extends OpMode {
@@ -79,8 +82,8 @@ public class MainControl extends OpMode {
         voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
 
         gateSubsystem = new GateSubsystem(gate);
-        shooter = new LoaderSubsystem(transfer, gateSubsystem, intake, telemetry);
         flywheel = new Flywheel(shooter1, shooter2, telemetry, voltageSensor);
+        shooter = new LoaderSubsystem(transfer, gateSubsystem, intake, telemetry, flywheel);
 
         imu = hardwareMap.get(IMU.class, "imu");
         // Initialize IMU directly
@@ -241,6 +244,7 @@ class GateSubsystem {
 class LoaderSubsystem {
     private final Telemetry telemetry;
     private int previousPositionTransfer;
+    private final Gate counter;
 
     /**
      * Starts the launch sequence.
@@ -311,7 +315,7 @@ class LoaderSubsystem {
         /**
          *
          */
-        REGRESS_GATE_WAIT_STABLE, LAUNCH_NEXT, LAUNCH_WAIT_LONG,
+        REGRESS_GATE_WAIT_STABLE, LAUNCH_NEXT, LAUNCH_WAIT_LONG, PRE_LAUNCH,
     }
     private final DcMotorEx transfer;
     private final DcMotorEx intake;
@@ -332,12 +336,14 @@ class LoaderSubsystem {
      * @param transfer The transfer motor.
      * @param gate The gate servo.
      */
-    public LoaderSubsystem(DcMotorEx transfer, GateSubsystem gate, DcMotorEx intake, Telemetry telemetry) {
+    public LoaderSubsystem(DcMotorEx transfer, GateSubsystem gate, DcMotorEx intake, Telemetry telemetry, Flywheel flywheel) {
         this.transfer = transfer;
         this.gate = gate;
         this.intake = intake;
         this.telemetry = telemetry;
         setGateOpen(true);
+        this.counter = new Gate(flywheel::isStable);
+        counter.debugTelemetry = telemetry;
     }
 
     /**
@@ -375,7 +381,8 @@ class LoaderSubsystem {
                     state = LoaderState.PRE_INTAKE;
                 }
                 if (request == LoaderState.LAUNCH) {
-                    state = LoaderState.LAUNCH;
+                    state = LoaderState.PRE_LAUNCH;
+                    counter.reset();
                 }
                 break;
             case PRE_INTAKE:
@@ -425,7 +432,11 @@ class LoaderSubsystem {
                 }
                 break;
 
-                //
+            case PRE_LAUNCH:
+                counter.update();
+                if (counter.trueForAtLeast(0.2)) state = LoaderState.LAUNCH;
+                if (request == LoaderState.READY) state = LoaderState.READY;
+                break;
             case LAUNCH:
                 //intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 transfer.setTargetPosition(transfer.getCurrentPosition() + 537 / 1);
@@ -433,9 +444,11 @@ class LoaderSubsystem {
                 transfer.setPower(1);
                 elapsedTime.reset();
                 state = LoaderState.LAUNCH_WAIT;
+                counter.reset();
                 break;
             case LAUNCH_WAIT:
-                if (elapsedTime.seconds() > 0.20) { // 0.20
+                counter.update();
+                if (elapsedTime.seconds() > 0.10 && counter.trueForAtLeast(0.10)) { // 0.20
                     if (request == LoaderState.READY) {
                         gate.close();
                         state = LoaderState.GATE_WAIT;
@@ -451,10 +464,12 @@ class LoaderSubsystem {
                 transfer.setPower(1);
                 intake.setPower(1);
                 elapsedTime.reset();
+                counter.reset();
                 state = LoaderState.LAUNCH_WAIT_LONG;
                 break;
             case LAUNCH_WAIT_LONG:
-                if (elapsedTime.seconds() > 0.20) { // 0.40
+                counter.update();
+                if (elapsedTime.seconds() > 0.30 && counter.trueForAtLeast(0.20)) { // 0.40
                     if (request == LoaderState.READY) {
                         gate.close();
                         state = LoaderState.GATE_WAIT;
@@ -487,6 +502,44 @@ class LoaderSubsystem {
     }
     int of(double x) {
         return (int) x;
+    }
+
+}
+
+class Gate {
+    public Telemetry debugTelemetry = null;
+
+    private final ElapsedTime time = new ElapsedTime();
+    private final BooleanSupplier gate;
+    Gate(BooleanSupplier gate) {
+        this.gate = gate;
+    }
+
+
+    void update() {
+        if (!gate.getAsBoolean()) reset();
+    }
+
+    void reset() {
+        time.reset();
+    }
+
+    boolean trueForAtLeast(double required) {
+        if(debugTelemetry != null) {
+            debugTelemetry.addData("Time", time.seconds());
+            debugTelemetry.addData("Till", required);
+        }
+        return time.seconds() >= required;
+    }
+}
+
+class SupplierUtils {
+    static BooleanSupplier and(BooleanSupplier a, BooleanSupplier b) {
+        return () -> a.getAsBoolean() && b.getAsBoolean();
+    }
+
+    static BooleanSupplier greater(DoubleSupplier a, int b) {
+        return () -> a.getAsDouble() > b;
     }
 }
 
@@ -660,7 +713,7 @@ class Flywheel {
     }
 
 
-    private int stabilityThreshold = 60;
+    private int stabilityThreshold = 60; // previously 5
 
     /**
      * Function to return whether the motor has stabilized (reached the target velocity)
@@ -692,4 +745,27 @@ class Flywheel {
 
 
     void dispose() {}
+}
+
+class CallbackCounter {
+    private final int required;
+    private int count;
+    private final BooleanSupplier callbackFn;
+
+    public CallbackCounter(int required, BooleanSupplier callbackFn) {
+        this.required = required;
+        this.callbackFn = callbackFn;
+    }
+
+    public void advance() {
+        count = callbackFn.getAsBoolean()? count + 1: 0;
+    }
+
+    public void reset() {
+        count = 0;
+    }
+
+    public boolean isReady() {
+        return count >= required;
+    }
 }
