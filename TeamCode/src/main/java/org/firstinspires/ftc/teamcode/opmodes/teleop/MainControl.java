@@ -414,7 +414,7 @@ class LoaderSubsystem {
                 }
                 break;
             case WAIT_REGRESS_THEN_OPEN_GATE:
-                if (elapsedTime.seconds() > .1) {
+                if (elapsedTime.seconds() > .2) {
                     gate.open();
                     state = LoaderState.REGRESS_GATE_WAIT_STABLE;
                 }
@@ -435,7 +435,7 @@ class LoaderSubsystem {
                 state = LoaderState.LAUNCH_WAIT;
                 break;
             case LAUNCH_WAIT:
-                if (elapsedTime.seconds() > 0.20) {
+                if (elapsedTime.seconds() > 0.20) { // 0.20
                     if (request == LoaderState.READY) {
                         gate.close();
                         state = LoaderState.GATE_WAIT;
@@ -444,9 +444,9 @@ class LoaderSubsystem {
                 }
                 break;
             case LAUNCH_NEXT:
-                transfer.setTargetPosition(transfer.getCurrentPosition() + 537 / 1);
+                transfer.setTargetPosition(transfer.getCurrentPosition() + of(537 * 1.5));
                 transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                intake.setTargetPosition(transfer.getCurrentPosition() + 145 / 1);
+                intake.setTargetPosition(intake.getCurrentPosition() + of(145 * 2));
                 intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 transfer.setPower(1);
                 intake.setPower(1);
@@ -454,7 +454,7 @@ class LoaderSubsystem {
                 state = LoaderState.LAUNCH_WAIT_LONG;
                 break;
             case LAUNCH_WAIT_LONG:
-                if (elapsedTime.seconds() > 0.40) {
+                if (elapsedTime.seconds() > 0.20) { // 0.40
                     if (request == LoaderState.READY) {
                         gate.close();
                         state = LoaderState.GATE_WAIT;
@@ -484,6 +484,9 @@ class LoaderSubsystem {
                 break;
         }
         telemetry.addLine(state.name());
+    }
+    int of(double x) {
+        return (int) x;
     }
 }
 
