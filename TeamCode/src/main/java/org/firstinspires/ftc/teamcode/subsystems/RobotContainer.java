@@ -1,13 +1,17 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.bylazar.field.FieldManager;
+import com.bylazar.field.PanelsField;
+import com.bylazar.field.Style;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Vector;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathChain;
+import com.pedropathing.util.PoseHistory;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -20,19 +24,15 @@ public class RobotContainer {
     public static LoaderSubsystem LOADER;
     private static boolean initialized = false;
     public static void init(HardwareMap hardwareMap, Telemetry telemetry) {
-        if (!initialized) {
-            gate = hardwareMap.get(Servo.class, "gate");
-            intake = hardwareMap.get(DcMotorEx.class, "intake");
-            transfer = hardwareMap.get(DcMotorEx.class, "transfer");
-            shooter1 = hardwareMap.get(DcMotorEx.class, "shooter1");
-            shooter2 = hardwareMap.get(DcMotorEx.class, "shooter2");
+        gate = hardwareMap.get(Servo.class, "gate");
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
+        transfer = hardwareMap.get(DcMotorEx.class, "transfer");
+        shooter1 = hardwareMap.get(DcMotorEx.class, "shooter1");
+        shooter2 = hardwareMap.get(DcMotorEx.class, "shooter2");
 
-            transfer.setDirection(DcMotorSimple.Direction.REVERSE);
-
-            FLYWHEEL = new FlywheelSubsystem(shooter1, shooter2, telemetry);
-            GATE = new GateSubsystem(gate);
-            LOADER = new LoaderSubsystem(transfer, GATE, intake, telemetry, FLYWHEEL);
-            initialized = true;
-        }
+        FLYWHEEL = new FlywheelSubsystem(shooter1, shooter2, telemetry);
+        GATE = new GateSubsystem(gate);
+        LOADER = new LoaderSubsystem(transfer, GATE, intake, telemetry, FLYWHEEL);
+        initialized = true;
     }
 }

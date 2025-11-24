@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -96,6 +97,7 @@ public class LoaderSubsystem {
     private final ElapsedTime elapsedTime = new ElapsedTime();
 
     private LoaderState state = LoaderState.INITIALIZE;
+    private int shots = 0;
 
     /**
      * Constructs a new Flywheel object using all the different required motors.
@@ -107,6 +109,7 @@ public class LoaderSubsystem {
         this.gate = gate;
         this.intake = intake;
         this.telemetry = telemetry;
+        transfer.setDirection(DcMotorSimple.Direction.REVERSE);
         setGateOpen(true);
         this.counter = new Gate(flywheel::isStable);
         counter.debugTelemetry = telemetry;
@@ -155,6 +158,7 @@ public class LoaderSubsystem {
                 telemetry.addData("is stable", gate.isStable());
                 if (gate.isStable()) {
                     state = LoaderState.INTAKE;
+                    resetShots();
                     intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     intake.setPower(0.6);
@@ -219,7 +223,10 @@ public class LoaderSubsystem {
                         gate.close();
                         state = LoaderState.GATE_WAIT;
                     }
-                    else state = LoaderState.LAUNCH_NEXT;
+                    else {
+                        state = LoaderState.LAUNCH_NEXT;
+                        shots += 1;
+                    }
                 }
                 break;
             case LAUNCH_NEXT:
@@ -240,7 +247,10 @@ public class LoaderSubsystem {
                         gate.close();
                         state = LoaderState.GATE_WAIT;
                     }
-                    else state = LoaderState.LAUNCH_NEXT;
+                    else {
+                        state = LoaderState.LAUNCH_NEXT;
+                        shots += 1;
+                    }
                 }
                 break;
             case GATE_WAIT:
@@ -266,7 +276,16 @@ public class LoaderSubsystem {
         }
         telemetry.addLine(state.name());
     }
-    int of(double x) {
+
+    public int getShots() {
+        return shots;
+    }
+
+    public void resetShots() {
+        shots = 0;
+    }
+
+    private int of(double x) {
         return (int) x;
     }
 
