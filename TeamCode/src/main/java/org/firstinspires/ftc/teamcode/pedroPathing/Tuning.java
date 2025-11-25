@@ -23,6 +23,7 @@ import com.pedropathing.telemetry.SelectableOpMode;
 import com.pedropathing.util.*;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -250,6 +251,7 @@ class LateralTuner extends OpMode {
      * This updates the robot's pose estimate, and updates the Panels telemetry with the
      * calculated multiplier and draws the robot.
      */
+
     @Override
     public void loop() {
         follower.update();
@@ -773,11 +775,19 @@ class TranslationalTuner extends OpMode {
         follower.followPath(forwards);
     }
 
+    private boolean canright=true, canleft=true, canup=true, candown=true;
+
     /** This runs the OpMode, updating the Follower as well as printing out the debug statements to the Telemetry */
     @Override
     public void loop() {
         follower.update();
         draw();
+
+        //private boolean canright=true, canleft=true, canup=true, candown=true;
+        if(gamepad1.dpad_right) {if(canright) {canright=false; follower.setPose(new Pose(72,74));}} else canright=true;
+        if(gamepad1.dpad_left) {if(canleft) {canleft=false; follower.setPose(new Pose(72,70));}} else canleft=true;
+        if(gamepad1.dpad_up) {if(canup) {canup=false; follower.setPose(new Pose(72,84));}} else canup=true;
+        if(gamepad1.dpad_down) {if(candown) {candown=false; follower.setPose(new Pose(72,60));}} else candown=true;
 
         if (!follower.isBusy()) {
             if (forward) {
@@ -842,6 +852,7 @@ class HeadingTuner extends OpMode {
         follower.followPath(forwards);
     }
 
+    private boolean canright=true, canleft=true, canup=true, candown=true;
     /**
      * This runs the OpMode, updating the Follower as well as printing out the debug statements to
      * the Telemetry, as well as the Panels.
@@ -850,6 +861,11 @@ class HeadingTuner extends OpMode {
     public void loop() {
         follower.update();
         draw();
+
+        if(gamepad1.dpad_right) {if(canright) {canright=false; follower.setPose(new Pose(72,72).setHeading(-1.0d*Math.PI/180.0d));}} else canright=true;
+        if(gamepad1.dpad_left) {if(canleft) {canleft=false; follower.setPose(new Pose(72,72).setHeading(1.0d*Math.PI/180.0d));}} else canleft=true;
+        if(gamepad1.dpad_up) {if(canup) {canup=false; follower.setPose(new Pose(72,72).setHeading(-90.0d*Math.PI/180.0d));}} else canup=true;
+        if(gamepad1.dpad_down) {if(candown) {candown=false; follower.setPose(new Pose(72,72).setHeading(90.0d*Math.PI/180.0d));}} else candown=true;
 
         if (!follower.isBusy()) {
             if (forward) {
@@ -919,25 +935,34 @@ class DriveTuner extends OpMode {
                 .build();
 
         follower.followPath(forwards);
+        timer.reset();
     }
 
     /**
      * This runs the OpMode, updating the Follower as well as printing out the debug statements to
      * the Telemetry, as well as the Panels.
      */
+    ElapsedTime timer=new ElapsedTime();
     @Override
     public void loop() {
         follower.update();
         draw();
 
+
+        //ElapsedTime timer=new ElapsedTime();
         if (!follower.isBusy()) {
-            if (forward) {
-                forward = false;
-                follower.followPath(backwards);
-            } else {
-                forward = true;
-                follower.followPath(forwards);
+            if (timer.seconds()>1.0) {
+                if (forward) {
+                    forward = false;
+                    follower.followPath(backwards);
+                } else {
+                    forward = true;
+                    follower.followPath(forwards);
+                }
             }
+        }
+        else {
+            timer.reset();
         }
 
         telemetryM.debug("Driving forward?: " + forward);
@@ -988,6 +1013,7 @@ class Line extends OpMode {
         follower.followPath(forwards);
     }
 
+    ElapsedTime timer=new ElapsedTime();
     /** This runs the OpMode, updating the Follower as well as printing out the debug statements to the Telemetry */
     @Override
     public void loop() {
@@ -995,13 +1021,18 @@ class Line extends OpMode {
         draw();
 
         if (!follower.isBusy()) {
-            if (forward) {
-                forward = false;
-                follower.followPath(backwards);
-            } else {
-                forward = true;
-                follower.followPath(forwards);
+            if (timer.seconds()>1.0) {
+                if (forward) {
+                    forward = false;
+                    follower.followPath(backwards);
+                } else {
+                    forward = true;
+                    follower.followPath(forwards);
+                }
             }
+        }
+        else {
+            timer.reset();
         }
 
         telemetryM.debug("Driving Forward?: " + forward);
@@ -1060,6 +1091,7 @@ class CentripetalTuner extends OpMode {
         follower.followPath(forwards);
     }
 
+    ElapsedTime timer=new ElapsedTime();
     /**
      * This runs the OpMode, updating the Follower as well as printing out the debug statements to
      * the Telemetry, as well as the Panels.
@@ -1069,13 +1101,18 @@ class CentripetalTuner extends OpMode {
         follower.update();
         draw();
         if (!follower.isBusy()) {
-            if (forward) {
-                forward = false;
-                follower.followPath(backwards);
-            } else {
-                forward = true;
-                follower.followPath(forwards);
+            if (timer.seconds()>1.0) {
+                if (forward) {
+                    forward = false;
+                    follower.followPath(backwards);
+                } else {
+                    forward = true;
+                    follower.followPath(forwards);
+                }
             }
+        }
+        else {
+            timer.reset();
         }
 
         telemetryM.debug("Driving away from the origin along the curve?: " + forward);

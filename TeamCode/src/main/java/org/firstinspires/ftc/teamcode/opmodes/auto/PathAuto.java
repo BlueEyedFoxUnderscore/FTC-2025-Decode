@@ -1,19 +1,18 @@
 package org.firstinspires.ftc.teamcode.opmodes.auto;
 
+import static java.lang.StrictMath.PI;
+
 import com.bylazar.field.FieldManager;
 import com.bylazar.field.PanelsField;
 import com.bylazar.field.Style;
-import com.pedropathing.control.KalmanFilter;
-import com.pedropathing.control.KalmanFilterParameters;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.ftc.FTCCoordinates;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.PedroCoordinates;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.math.Vector;
 import com.pedropathing.paths.Path;
-import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.paths.PathChain;
+import com.pedropathing.paths.callbacks.PathCallback;
 import com.pedropathing.util.PoseHistory;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -21,54 +20,115 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.robot.Robot;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.Gate;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.pedroPathing.Tuning;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 
 @Autonomous
 public class PathAuto extends LinearOpMode {
     boolean done = false;
     Follower follower;
-    //private Limelight3A camera; //any camera here
+    private Limelight3A camera; //any camera here
     private boolean following = false;
     private final Pose TARGET_LOCATION = new Pose().withY(20); //Put the target location here
+    private boolean acceptedPose = false;
+    private boolean wasCalled = false;
 
+    private enum AutoState {
+        READY,
+        SHOOTING,
+    }
+
+    private AutoState state = AutoState.READY;
 
 
     @Override
     public void runOpMode() throws InterruptedException {
-        //camera = hardwareMap.get(Limelight3A.class, "limelight");
+
+        camera = hardwareMap.get(Limelight3A.class, "limelight");
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(117.834, 129.651).withHeading(Math.toRadians(36))); //set your starting pose
-        //camera.start();
+        camera.start();
         RobotContainer.init(hardwareMap, telemetry);
-        Gate gate = new Gate(() -> follower.getVelocity().getMagnitude() < 0.1);
-        waitForStart();
+        Gate isStoppedGate = new Gate(() -> follower.getVelocity().getMagnitude() < 10);
+        Drawing.init();
+        try {
+            Drawing.drawDebug(follower);
+            Drawing.sendPacket();
+        } catch (Exception e) {
+            throw new RuntimeException("Drawing failed " + e);
+        }
+        //waitForStart();
+        while (!isStarted() && !isStopRequested()) {
+            follower.update();
+            try {
+                Drawing.drawRobot(follower.getPose());
+                Drawing.sendPacket();
+            } catch (Exception e) {
+                throw new RuntimeException("Drawing failed " + e);
+            }
+        }
 
         PathChain path1 = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(117.834, 129.651), new Pose(87.278, 106.523))
+                        new BezierLine(new Pose(121.71629542790153, 124.07971864009379), new Pose(91.66705744431418, 101.28956623681125))
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(36))
+                .addParametricCallback(0, this::spinUp)
+                .addParametricCallback(1, this::launchBalls)
+                .addPath(
+                        new BezierLine(new Pose(91.66705744431418, 101.28956623681125), new Pose(92.00468933177022, 83.22626025791324))
+                )
+                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                 .build();
 
         follower.followPath(path1);
-        Drawing.drawRobot(follower.getPose());
 
         while ((!done) && opModeIsActive()) {
-            gate.update();
+            switch (state) {
+                case READY:
+                    break;
+                case SHOOTING:
+                    if(RobotContainer.LOADER.doneFiring()) {
+                        spinDown();
+                        follower.resumePathFollowing();
+                        state = AutoState.READY;
+                    }
+                    break;
+                default:
+                    int i = 0 / 0;
+                    break;
+            }
+
+            try {
+                Drawing.drawRobot(follower.getPose());
+                Drawing.sendPacket();
+            } catch (Exception e) {
+                throw new RuntimeException("Drawing failed " + e);
+            }
+            telemetry.update();
+
+            isStoppedGate.update();
             RobotContainer.FLYWHEEL.update();
             follower.update();
             spinUp();
             RobotContainer.LOADER.update();
-            ;
-
-            if(!follower.isBusy()) {
-                RobotContainer.LOADER.launch();
+            if (isStoppedGate.trueForAtLeast(2)) {
+                isStoppedGate.reset();
+                follower.setPose(getRobotPoseFromCamera());
+                telemetry.addData("ConvertedCameraPose", getRobotPoseFromCamera().toString());
+                telemetry.addData("BotPose", follower.getPose().toString());
             }
+            telemetry.addData("Is accepted", acceptedPose);
+            telemetry.addData("Was called", wasCalled);
+            telemetry.addData("Can be called", isStoppedGate.trueForAtLeast(2));
+            telemetry.addData("Velocity", follower.getVelocity().getMagnitude());
+
 
 //            if (!following) {
 //                follower.followPath(
@@ -82,24 +142,34 @@ public class PathAuto extends LinearOpMode {
 //            }
             //This uses the aprilTag to relocalize your robot
             //You can also create a custom AprilTag fusion Localizer for the follower if you want to use this by default for all your autos
-            //follower.setPose(getRobotPoseFromCamera());
+
         }
     }
-    /*
+
+    private static final double INCHES_PER_METER = 39.3701;
     private Pose getRobotPoseFromCamera() {
         //Fill this out to get the robot Pose from the camera's output (apply any filters if you need to using follower.getPose() for fusion)
         //Pedro Pathing has built-in KalmanFilter and LowPassFilter classes you can use for this
         //Use this to convert standard FTC coordinates to standard Pedro Pathing coordinates
         LLResult result = camera.getLatestResult();
+        wasCalled = true;
         if (result != null) {
             if (result.isValid()) {
+                acceptedPose = true;
                 Pose3D botpose = result.getBotpose();
+                Position position = botpose.getPosition();
+                YawPitchRollAngles orientation = botpose.getOrientation();
                 telemetry.addData("tx", result.getTx());
                 telemetry.addData("ty", result.getTy());
-                telemetry.addData("Botpose", botpose.toString());
+                telemetry.addData("CameraPose", botpose.toString());
+                return new Pose(
+                        72.0+(position.y * INCHES_PER_METER),
+                        72.0-(position.x * INCHES_PER_METER),
+                        orientation.getYaw(AngleUnit.RADIANS) - PI/2,
+                        PedroCoordinates.INSTANCE);
             }
         }
-        return new Pose(result.getBotpose().getPosition().x, result.getBotpose().getPosition().y, result.getBotpose().getOrientation().getYaw(), FTCCoordinates.INSTANCE).getAsCoordinateSystem(PedroCoordinates.INSTANCE);
+        return follower.getPose();
     }
     //*/
 
@@ -110,16 +180,24 @@ public class PathAuto extends LinearOpMode {
     private void spinDown() {
         RobotContainer.FLYWHEEL.setRequested(0, 0);
     }
+
+    private void launchBalls() {
+        RobotContainer.LOADER.setLoaded(3);
+        RobotContainer.LOADER.resetShots();
+        RobotContainer.LOADER.launch();
+        state = AutoState.SHOOTING;
+        follower.pausePathFollowing();
+    }
 }
 
 class Drawing {
     public static final double ROBOT_RADIUS = 9; // woah
     private static final FieldManager panelsField = PanelsField.INSTANCE.getField();
     private static final Style robotLook = new Style(
-            "", "#3F51B5", 0.0
+            "", "#3F51B5", 0.75
     );
     private static final Style historyLook = new Style(
-            "", "#4CAF50", 0.0
+            "", "#4CAF50", 0.75
     );
     /**
      * This prepares Panels Field for using Pedro Offsets

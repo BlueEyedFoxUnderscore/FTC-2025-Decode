@@ -17,16 +17,24 @@ public class Constants {
     public static FollowerConstants FOLLOWER_CONSTANTS = new FollowerConstants()
             .forwardZeroPowerAcceleration(-29.0d)
             .lateralZeroPowerAcceleration(-50.0d)
+            //TRANSLATION
             .useSecondaryTranslationalPIDF(true)
+            /*far */.translationalPIDFCoefficients(new PIDFCoefficients(1d, 0.0d, 0.0d, 0.0d))
+            /*near*/.secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(0.05d, 0.0d, 0.006d, 0.03d))
+            .translationalPIDFSwitch(10.0d)
+            //HEADING
             .useSecondaryHeadingPIDF(true)
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.5d, 0.0d, 0.0d, 0.0d))
-            .secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(0.3d, 0.0d, 0.03d, 0.03d))
-            .headingPIDFCoefficients(new PIDFCoefficients(1.5d, 0.0d, 0.03d, 0.0d))
-            .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(1.0d, 0.0d, 0.05d, 0.03d))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.025d, 0.0d, 1.0E-5d, 0.6d, 0.01d))
-            .headingPIDFSwitch(0.3d)
-            .centripetalScaling(0.0004d);
-    public static PathConstraints PATH_CONSTRAINTS = new PathConstraints(0.99d, 100.0d, 1.0d, 1.0d);
+            /* far*/.headingPIDFCoefficients(new PIDFCoefficients(2.0d, 0.0d, 0.0d, 0.0d))
+            /*near*/.secondaryHeadingPIDFCoefficients(new PIDFCoefficients(0.7d, 0.0d, 0.05d, 0.07d)) // d=.12 was the decel, but causes jumps from small changes
+            .headingPIDFSwitch(40.0d*(Math.PI/180.0d))
+            //DRIVE
+            .useSecondaryDrivePIDF(true)
+            /* far*/.drivePIDFCoefficients(new FilteredPIDFCoefficients(1.0d, 0.0d, 0d, 0.6d, 0.0d))
+            /*near*/.secondaryDrivePIDFCoefficients(new FilteredPIDFCoefficients(0.006d, 0.0d, .000005d, 0.6d, 0.03d))
+            .drivePIDFSwitch(30)
+            //CENTRIPETAL
+            .centripetalScaling(0.0006d);
+    public static PathConstraints PATH_CONSTRAINTS = new PathConstraints(0.98d, 100.0d, 1.0d, 1.0d);
     public static PinpointConstants LOCALIZER_CONSTANTS = new PinpointConstants().distanceUnit(DistanceUnit.MM).forwardPodY(130.0d).strafePodX(213.0d).hardwareMapName("odo1").encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD).forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD).strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
     public static MecanumConstants DRIVE_CONSTANTS = new MecanumConstants()
             .maxPower(1.0d)

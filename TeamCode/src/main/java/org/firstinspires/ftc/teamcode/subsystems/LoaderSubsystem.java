@@ -281,6 +281,16 @@ public class LoaderSubsystem {
         return shots;
     }
 
+    private int loaded;
+
+    public void setLoaded(int loaded) {
+        this.loaded = loaded;
+    }
+
+    public boolean doneFiring() {
+        return shots > loaded;
+    }
+
     public void resetShots() {
         shots = 0;
     }

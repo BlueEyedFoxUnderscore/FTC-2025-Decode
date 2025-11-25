@@ -35,4 +35,9 @@ public class RobotContainer {
         LOADER = new LoaderSubsystem(transfer, GATE, intake, telemetry, FLYWHEEL);
         initialized = true;
     }
+
+    public static void update() {
+        FLYWHEEL.update();
+        LOADER.update();
+    }
 }
