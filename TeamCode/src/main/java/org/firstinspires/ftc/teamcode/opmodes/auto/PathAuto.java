@@ -98,7 +98,7 @@ public class PathAuto extends LinearOpMode {
                 .addPath(Paths.BACK_UP_FROM_START)
                     .setConstantHeadingInterpolation(Math.toRadians(36))
                     .addParametricCallback(0, this::spinUp)
-                    .addParametricCallback(0.95, this::launchBalls2)
+                    .addParametricCallback(0.99, this::launchBalls2)
                 .addPath(stayAt(Paths.BACK_UP_FROM_START.endPose()))
                     .setConstantHeadingInterpolation(Math.toRadians(36))
                     .addParametricCallback(0, this::reorient)
@@ -108,12 +108,12 @@ public class PathAuto extends LinearOpMode {
                     .addParametricCallback(0.9, () -> this.setFollowerMaxPower(0.5))
                 .addPath(Paths.GROUP_PICKUP_1)
                     .setConstantHeadingInterpolation(0)
-                    .addParametricCallback(0.95, () -> this.setFollowerMaxPower(1.0))
+                    .addParametricCallback(0.99, () -> this.setFollowerMaxPower(1.0))
                 .addPath(Paths.GROUP_SHOOT_1)
                     .setLinearHeadingInterpolation(0, Math.toRadians(36))
                     .addParametricCallback(0, this::spinUp)
                     .addParametricCallback(0.9, RobotContainer.LOADER::cancelIntake)
-                    .addParametricCallback(0.95, this::launchBalls3)
+                    .addParametricCallback(0.99, this::launchBalls3)
                 .addPath(Paths.GROUP_APPROACH_2)
                     .setLinearHeadingInterpolation(Math.toRadians(36), 0)
                     .addParametricCallback(0.1, RobotContainer.LOADER::cancelLaunch)
@@ -121,15 +121,14 @@ public class PathAuto extends LinearOpMode {
                     .addParametricCallback(0.9, () -> this.setFollowerMaxPower(0.5))
                 .addPath(Paths.GROUP_PICKUP_2)
                     .setConstantHeadingInterpolation(0)
-                    .addParametricCallback(0.95, () -> this.setFollowerMaxPower(1.0))
+                    .addParametricCallback(0.99, () -> this.setFollowerMaxPower(1.0))
                 .addPath(Paths.GROUP_SHOOT_2_A)
                     .setConstantHeadingInterpolation(0)
                     .addParametricCallback(0.2, this::spinUp)
                 .addPath(Paths.GROUP_SHOOT_2)
                     .setLinearHeadingInterpolation(0, Math.toRadians(36))
-                    .addParametricCallback(0.9, RobotContainer.LOADER::cancelIntake)
-                    .addParametricCallback(0.95, this::launchBalls3)
-
+                    .addParametricCallback(0.8, RobotContainer.LOADER::cancelIntake)
+                    .addParametricCallback(0.99, this::launchBalls3)
                 .build();
 
         follower.followPath(path1);
@@ -169,7 +168,7 @@ public class PathAuto extends LinearOpMode {
                     break;
                 case SAMPLE_TAGS_3: /// Get apriltag samples
                     addSampleIfAvailable(samples);
-                    if (elapsedTime.seconds() > 0.5) {
+                    if (elapsedTime.seconds() > 0.6) {
                         state = AutoState.SAMPLE_TAGS_4;
                     }
                     else break;
@@ -211,7 +210,7 @@ public class PathAuto extends LinearOpMode {
     }
 
     private void spinUp() {
-        RobotContainer.FLYWHEEL.setRequested(2800, 2400);
+        RobotContainer.FLYWHEEL.setRequested(2600, 2400); //2800 was original
     }
 
     private void spinDown() {
