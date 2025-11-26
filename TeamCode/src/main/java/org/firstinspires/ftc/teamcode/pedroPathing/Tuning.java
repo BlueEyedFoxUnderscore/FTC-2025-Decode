@@ -1003,30 +1003,45 @@ class Line extends OpMode {
         drawOnlyCurrent();
     }
 
+    double mydistance=0.25;
+    Pose startPose=new Pose(72,72);
+
     @Override
     public void start() {
         follower.activateAllPIDFs();
-        forwards = new Path(new BezierLine(new Pose(72,72), new Pose(DISTANCE + 72,72)));
+        forwards = new Path(new BezierLine(new Pose(72,72), new Pose(mydistance + 72,72)));
         forwards.setConstantHeadingInterpolation(0);
-        backwards = new Path(new BezierLine(new Pose(DISTANCE + 72,72), new Pose(72,72)));
+        backwards = new Path(new BezierLine(new Pose(mydistance + 72,72), new Pose(72,72)));
         backwards.setConstantHeadingInterpolation(0);
         follower.followPath(forwards);
     }
 
     ElapsedTime timer=new ElapsedTime();
     /** This runs the OpMode, updating the Follower as well as printing out the debug statements to the Telemetry */
+    private boolean canright=true, canleft=true, canup=true, candown=true;
     @Override
     public void loop() {
         follower.update();
         draw();
+        if(gamepad1.dpad_right) {if(canright) {canright=false; mydistance+=0.25;}} else canright=true;
+        if(gamepad1.dpad_left) {if(canleft) {canleft=false; mydistance-=0.25;}} else canleft=true;
+        if(gamepad1.dpad_up) {if(canup) {canup=false; mydistance+=12.0;}} else canup=true;
+        if(gamepad1.dpad_down) {if(candown) {candown=false; mydistance-=12.0;}} else candown=true;
 
         if (!follower.isBusy()) {
             if (timer.seconds()>1.0) {
                 if (forward) {
                     forward = false;
+                    backwards = new Path(new BezierLine(new Pose(mydistance + 72,72), new Pose(72,72)));
+                    backwards.setConstantHeadingInterpolation(0);
+                    backwards.setTValueConstraint(1.0);
+                    backwards.setBrakingStrength(1);
                     follower.followPath(backwards);
                 } else {
                     forward = true;
+                    forwards = new Path(new BezierLine(new Pose(72,72), new Pose(mydistance + 72,72)));
+                    forwards.setConstantHeadingInterpolation(0);
+                    forwards.setTValueConstraint(1.0);
                     follower.followPath(forwards);
                 }
             }
@@ -1036,6 +1051,7 @@ class Line extends OpMode {
         }
 
         telemetryM.debug("Driving Forward?: " + forward);
+        telemetryM.debug("Distance?: " + mydistance);
         telemetryM.update(telemetry);
     }
 }

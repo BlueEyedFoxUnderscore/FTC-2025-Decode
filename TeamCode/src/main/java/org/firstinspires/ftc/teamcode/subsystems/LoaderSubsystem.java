@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.Gate;
 public class LoaderSubsystem {
     private final Telemetry telemetry;
     private int previousPositionTransfer;
-    private final Gate counter;
+    private final Gate isFlywheelStableGate;
 
     /**
      * Starts the launch sequence.
@@ -111,8 +111,8 @@ public class LoaderSubsystem {
         this.telemetry = telemetry;
         transfer.setDirection(DcMotorSimple.Direction.REVERSE);
         setGateOpen(true);
-        this.counter = new Gate(flywheel::isStable);
-        counter.debugTelemetry = telemetry;
+        this.isFlywheelStableGate = new Gate(flywheel::isStable);
+        isFlywheelStableGate.debugTelemetry = telemetry;
     }
 
     /**
@@ -151,7 +151,7 @@ public class LoaderSubsystem {
                 }
                 if (request == LoaderState.LAUNCH) {
                     state = LoaderState.PRE_LAUNCH;
-                    counter.reset();
+                    isFlywheelStableGate.reset();
                 }
                 break;
             case PRE_INTAKE:
@@ -203,8 +203,8 @@ public class LoaderSubsystem {
                 break;
 
             case PRE_LAUNCH:
-                counter.update();
-                if (counter.trueForAtLeast(0.2)) state = LoaderState.LAUNCH;
+                isFlywheelStableGate.update();
+                if (isFlywheelStableGate.trueForAtLeast(0.2)) state = LoaderState.LAUNCH;
                 if (request == LoaderState.READY) state = LoaderState.READY;
                 break;
             case LAUNCH:
@@ -214,18 +214,16 @@ public class LoaderSubsystem {
                 transfer.setPower(1);
                 elapsedTime.reset();
                 state = LoaderState.LAUNCH_WAIT;
-                counter.reset();
+                isFlywheelStableGate.reset();
+                shots += 1;
                 break;
             case LAUNCH_WAIT:
-                counter.update();
-                if (elapsedTime.seconds() > 0.10 && counter.trueForAtLeast(0.10)) { // 0.20
+                isFlywheelStableGate.update();
+                if (elapsedTime.seconds() > 0.10) { // 0.20
+                    if (isFlywheelStableGate.trueForAtLeast(0.10)) state = LoaderState.LAUNCH_NEXT;
                     if (request == LoaderState.READY) {
                         gate.close();
                         state = LoaderState.GATE_WAIT;
-                    }
-                    else {
-                        state = LoaderState.LAUNCH_NEXT;
-                        shots += 1;
                     }
                 }
                 break;
@@ -237,19 +235,19 @@ public class LoaderSubsystem {
                 transfer.setPower(1);
                 intake.setPower(1);
                 elapsedTime.reset();
-                counter.reset();
+                isFlywheelStableGate.reset();
+                shots += 1;
                 state = LoaderState.LAUNCH_WAIT_LONG;
                 break;
             case LAUNCH_WAIT_LONG:
-                counter.update();
-                if (elapsedTime.seconds() > 0.30 && counter.trueForAtLeast(0.20)) { // 0.40
+                isFlywheelStableGate.update();
+                if (elapsedTime.seconds() > 0.30) {
+                    if (isFlywheelStableGate.trueForAtLeast(0.20)) { // 0.40
+                        state = LoaderState.LAUNCH_NEXT;
+                    }
                     if (request == LoaderState.READY) {
                         gate.close();
                         state = LoaderState.GATE_WAIT;
-                    }
-                    else {
-                        state = LoaderState.LAUNCH_NEXT;
-                        shots += 1;
                     }
                 }
                 break;

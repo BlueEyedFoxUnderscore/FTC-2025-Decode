@@ -30,11 +30,16 @@ public class Constants {
             //DRIVE
             .useSecondaryDrivePIDF(true)
             /* far*/.drivePIDFCoefficients(new FilteredPIDFCoefficients(1.0d, 0.0d, 0d, 0.6d, 0.0d))
-            /*near*/.secondaryDrivePIDFCoefficients(new FilteredPIDFCoefficients(0.006d, 0.0d, .000005d, 0.6d, 0.03d))
+            ///*near*/.secondaryDrivePIDFCoefficients(new FilteredPIDFCoefficients(0.006d, 0.0d, .000005d, 0.6d, 0.03d))
+            /*near*/.secondaryDrivePIDFCoefficients(new FilteredPIDFCoefficients(0.012d, 0.0d, .000005d, 0.6d, 0.03d))
             .drivePIDFSwitch(30)
             //CENTRIPETAL
             .centripetalScaling(0.0006d);
-    public static PathConstraints PATH_CONSTRAINTS = new PathConstraints(0.98d, 100.0d, 1.0d, 1.0d);
+    public static PathConstraints PATH_CONSTRAINTS = new PathConstraints(
+            0.99d,
+            100.0d,
+            1.0d,
+            1.0d);
     public static PinpointConstants LOCALIZER_CONSTANTS = new PinpointConstants().distanceUnit(DistanceUnit.MM).forwardPodY(130.0d).strafePodX(213.0d).hardwareMapName("odo1").encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD).forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD).strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
     public static MecanumConstants DRIVE_CONSTANTS = new MecanumConstants()
             .maxPower(1.0d)
