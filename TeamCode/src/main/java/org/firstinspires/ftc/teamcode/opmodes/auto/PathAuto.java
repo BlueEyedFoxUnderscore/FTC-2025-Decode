@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmodes.auto;
 
 import static java.lang.StrictMath.PI;
+import static java.lang.StrictMath.nextAfter;
 
 import com.bylazar.field.FieldManager;
 import com.bylazar.field.PanelsField;
@@ -14,6 +15,7 @@ import com.pedropathing.math.Vector;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.PoseHistory;
+import com.qualcomm.hardware.limelightvision.LLFieldMap;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -40,14 +42,7 @@ public class PathAuto extends LinearOpMode {
     private boolean acceptedPose = false;
     private boolean wasCalled = false;
 
-    private enum AutoState {
-        RESUME,
-        SHOOTING,
-        SAMPLE_TAGS,
-        SAMPLE_TAGS_2,
-        SAMPLE_TAGS_3,
-        READY, SAMPLE_TAGS_4;
-    }
+    private enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, SAMPLE_TAGS_4}
 
     private static final class Paths {
         public static final Path BACK_UP_FROM_START = new Path(new BezierLine (new Pose(121.716, 124.080), new Pose(95.381,  104.835)));
@@ -64,8 +59,13 @@ public class PathAuto extends LinearOpMode {
         public static final Path GO_TO_SQUARE       = new Path(new BezierLine (new Pose(95.550,  104.666), new Pose(105.341, 33.257)));
     }
 
-    private AutoState state = AutoState.RESUME;
+    private AutoState state = AutoState.READY;
 
+    public void setRunAtEnd(Runnable runAtEnd) {
+        this.runAtEnd = runAtEnd;
+    }
+
+    private Runnable runAtEnd = null, tempRun = null; // () -> {};
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -131,7 +131,9 @@ public class PathAuto extends LinearOpMode {
                     .addParametricCallback(0.99, this::launchBalls3)
                 .build();
 
-        follower.followPath(path1);
+        RedAuto.init(follower, this);
+
+        follower.followPath(RedAuto.START);
 
         LinkedList<Pose> samples = new LinkedList<>();
         ElapsedTime elapsedTime = new ElapsedTime();
@@ -141,19 +143,22 @@ public class PathAuto extends LinearOpMode {
         while ((!done) && opModeIsActive()) {
 
             follower.update();
+            if (runAtEnd != null && !follower.isBusy()) {
+                tempRun = runAtEnd;
+                runAtEnd = null;
+                tempRun.run();
+            }
 
             ///  S t a t e m a c h i n e
             switch (state) {
-                case RESUME:
-                    follower.resumePathFollowing();
-                    state = AutoState.READY;
                 case READY:
                     break;
                 case SHOOTING:
                     if (RobotContainer.LOADER.doneFiring()) {
-                        spinDown();
                         RobotContainer.LOADER.cancelLaunch();
-                        state = AutoState.RESUME;
+                        spinDown();
+                        startNextPath();
+                        state = AutoState.READY;
                     }
                     break;
                 case SAMPLE_TAGS:
@@ -177,7 +182,8 @@ public class PathAuto extends LinearOpMode {
                         follower.setPose(getAverageOfBest(samples, 5));
                         ++successfulRecogs;
                     }
-                    state = AutoState.RESUME;
+                    startNextPath();
+                    state = AutoState.READY;
                     break;
                 default: int fucksUpTheProgram = 0 / 0;
             }
@@ -209,11 +215,23 @@ public class PathAuto extends LinearOpMode {
         }
     }
 
-    private void spinUp() {
+
+    public void setNextPath(PathChain nextPath) {
+        this.nextPath = nextPath;
+    }
+
+    private PathChain nextPath;
+    private void startNextPath() {
+        if (nextPath != null) {
+            follower.followPath(nextPath);
+        }
+    }
+
+    void spinUp() {
         RobotContainer.FLYWHEEL.setRequested(2600, 2400); //2800 was original
     }
 
-    private void spinDown() {
+    void spinDown() {
         RobotContainer.FLYWHEEL.setRequested(0, 0);
     }
 
@@ -222,15 +240,14 @@ public class PathAuto extends LinearOpMode {
         follower.holdPoint(follower.getCurrentPath().endPose());
     }
 
-    private void launchBalls2() {
-        holdEndOfPath();
+    void launchBalls2() {
         RobotContainer.LOADER.setLoaded(2);
         RobotContainer.LOADER.resetShots();
         RobotContainer.LOADER.launch();
         state = AutoState.SHOOTING;
     }
 
-    private void launchBalls3() {
+    void launchBalls3() {
         holdEndOfPath();
         RobotContainer.LOADER.setLoaded(3);
         RobotContainer.LOADER.resetShots();
@@ -238,12 +255,12 @@ public class PathAuto extends LinearOpMode {
         state = AutoState.SHOOTING;
     }
 
-    private void reorient() {
+    void reorient() {
         holdEndOfPath();
         state = AutoState.SAMPLE_TAGS;
     }
 
-    private BezierLine stayAt(Pose location) {
+    BezierLine stayAt(Pose location) {
         return new BezierLine(location, location.withY(location.getY() + 1./100.));
     }
     private static final double INCHES_PER_METER = 39.3701;
@@ -327,6 +344,7 @@ public class PathAuto extends LinearOpMode {
         //Pedro Pathing has built-in KalmanFilter and LowPassFilter classes you can use for this
         //Use this to convert standard FTC coordinates to standard Pedro Pathing coordinates
         LLResult result = camera.getLatestResult();
+        camera.uploadFieldmap(new LLFieldMap(), 1);
         wasCalled = true;
         if (result != null) {
             if (result.isValid()) {
@@ -347,7 +365,7 @@ public class PathAuto extends LinearOpMode {
         return follower.getPose();
     }
 
-    private void setFollowerMaxPower(double power) {
+    void setFollowerMaxPower(double power) {
         follower.setMaxPower(power);
     }
     //*/

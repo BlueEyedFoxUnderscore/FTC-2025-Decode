@@ -5,13 +5,15 @@ import androidx.annotation.NonNull;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+import java.util.function.BooleanSupplier;
 
 public class FlywheelSubsystem {
     private final Telemetry telemetry;
     private final DcMotorEx shooter1, shooter2;
+    private BooleanSupplier isLoaderReadyToShootSupplier;
     /**
      * The current requested speed to be used on invocation of update()
      */
@@ -37,6 +39,10 @@ public class FlywheelSubsystem {
         shooter2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
+    public void setReady(BooleanSupplier ready) {
+        isLoaderReadyToShootSupplier = ready;
+    }
+
     /**
      * Unit indicator for Volts
      */
@@ -54,11 +60,12 @@ public class FlywheelSubsystem {
             telemetry.addLine("Full power");
             setPower(1);
         }/**/ else {
-            telemetry.addLine("Using PID");
-            double requestedSpeed = speed;
-            setVelocity(requestedSpeed);
-            telemetry.addData("Requested velocity", String.valueOf(requestedSpeed));
-            telemetry.addData("Actual velocity", String.valueOf(getSpeed()));
+            //telemetry.addLine("Using PID");
+            if(isLoaderReadyToShootSupplier.getAsBoolean()) {
+                setVelocity(speed);
+            }
+            //telemetry.addData("Requested velocity", String.valueOf(requestedSpeed));
+            //telemetry.addData("Actual velocity", String.valueOf(getSpeed()));
         }
     }
 

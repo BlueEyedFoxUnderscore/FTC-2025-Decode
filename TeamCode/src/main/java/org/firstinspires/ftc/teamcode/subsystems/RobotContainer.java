@@ -33,6 +33,7 @@ public class RobotContainer {
         FLYWHEEL = new FlywheelSubsystem(shooter1, shooter2, telemetry);
         GATE = new GateSubsystem(gate);
         LOADER = new LoaderSubsystem(transfer, GATE, intake, telemetry, FLYWHEEL);
+        FLYWHEEL.setReady(LOADER::isReady);
         initialized = true;
     }
 

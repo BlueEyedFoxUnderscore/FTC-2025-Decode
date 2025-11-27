@@ -1017,22 +1017,39 @@ class Line extends OpMode {
     }
 
     ElapsedTime timer=new ElapsedTime();
+    int changemode =1;
     /** This runs the OpMode, updating the Follower as well as printing out the debug statements to the Telemetry */
     private boolean canright=true, canleft=true, canup=true, candown=true;
+    double brstrength =1.0;
+    double brstart=1.0;
     @Override
     public void loop() {
         follower.update();
         draw();
-        if(gamepad1.dpad_right) {if(canright) {canright=false; mydistance+=0.25;}} else canright=true;
-        if(gamepad1.dpad_left) {if(canleft) {canleft=false; mydistance-=0.25;}} else canleft=true;
-        if(gamepad1.dpad_up) {if(canup) {canup=false; mydistance+=12.0;}} else canup=true;
-        if(gamepad1.dpad_down) {if(candown) {candown=false; mydistance-=12.0;}} else candown=true;
+        if(gamepad1.y) changemode=1;
+        if(gamepad1.a) changemode=2;
+        switch (changemode) {
+            case 1:
+                if(gamepad1.dpad_right) {if(canright) {canright=false; mydistance+=0.25;}} else canright=true;
+                if(gamepad1.dpad_left) {if(canleft) {canleft=false; mydistance-=0.25;}} else canleft=true;
+                if(gamepad1.dpad_up) {if(canup) {canup=false; mydistance+=12.0;}} else canup=true;
+                if(gamepad1.dpad_down) {if(candown) {candown=false; mydistance-=12.0;}} else candown=true;
+                break;
+            case 2:
+                if(gamepad1.dpad_right) {if(canright) {canright=false; brstrength +=0.05;}} else canright=true;
+                if(gamepad1.dpad_left) {if(canleft) {canleft=false; brstrength -=0.05;}} else canleft=true;
+                if(gamepad1.dpad_up) {if(canup) {canup=false; brstart +=0.05;}} else canup=true;
+                if(gamepad1.dpad_down) {if(candown) {candown=false; brstart -=0.05;}} else candown=true;
+                break;
+        }
 
         if (!follower.isBusy()) {
             if (timer.seconds()>1.0) {
                 if (forward) {
                     forward = false;
                     backwards = new Path(new BezierLine(new Pose(mydistance + 72,72), new Pose(72,72)));
+                    backwards.setBrakingStart(brstart);
+                    backwards.setBrakingStrength(brstrength);
                     backwards.setConstantHeadingInterpolation(0);
                     backwards.setTValueConstraint(1.0);
                     backwards.setBrakingStrength(1);
@@ -1040,6 +1057,8 @@ class Line extends OpMode {
                 } else {
                     forward = true;
                     forwards = new Path(new BezierLine(new Pose(72,72), new Pose(mydistance + 72,72)));
+                    forwards.setBrakingStart(brstart);
+                    forwards.setBrakingStrength(brstrength);
                     forwards.setConstantHeadingInterpolation(0);
                     forwards.setTValueConstraint(1.0);
                     follower.followPath(forwards);
@@ -1052,6 +1071,8 @@ class Line extends OpMode {
 
         telemetryM.debug("Driving Forward?: " + forward);
         telemetryM.debug("Distance?: " + mydistance);
+        telemetryM.debug("Break Strength? (high=abrupt): " + brstrength);
+        telemetryM.debug("Break Start? (1=start): " + brstart);
         telemetryM.update(telemetry);
     }
 }

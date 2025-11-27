@@ -23,11 +23,15 @@ public class LoaderSubsystem {
     }
 
     public void cancelLaunch() {
-        if(request == LoaderState.LAUNCH) request = LoaderState.READY;
+        if (request == LoaderState.LAUNCH) request = LoaderState.READY;
     }
 
     public void cancelIntake() {
-        if(request == LoaderState.INTAKE) request = LoaderState.READY;
+        if (request == LoaderState.INTAKE) request = LoaderState.READY;
+    }
+
+    public boolean isReady() {
+        return this.state == LoaderState.READY;
     }
 
     private enum LoaderState {
@@ -130,7 +134,7 @@ public class LoaderSubsystem {
         else gate.close();
     }
 
-    LoaderState request = LoaderState.INVALID;
+    LoaderState request = LoaderState.READY;
 
     public void intake() {
         request = LoaderState.INTAKE;
@@ -143,7 +147,6 @@ public class LoaderSubsystem {
             case INITIALIZE:
                 gate.open();
                 state = LoaderState.READY;
-                break;
             case READY:
                 if (request == LoaderState.INTAKE) {
                     gate.close();
@@ -155,7 +158,7 @@ public class LoaderSubsystem {
                 }
                 break;
             case PRE_INTAKE:
-                telemetry.addData("is stable", gate.isStable());
+                //telemetry.addData("is stable", gate.isStable());
                 if (gate.isStable()) {
                     state = LoaderState.INTAKE;
                     resetShots();
@@ -191,7 +194,7 @@ public class LoaderSubsystem {
                 }
                 break;
             case WAIT_REGRESS_THEN_OPEN_GATE:
-                if (elapsedTime.seconds() > .2) {
+                if (elapsedTime.seconds() > .4) {
                     gate.open();
                     state = LoaderState.REGRESS_GATE_WAIT_STABLE;
                 }
@@ -205,7 +208,7 @@ public class LoaderSubsystem {
             case PRE_LAUNCH:
                 isFlywheelStableGate.update();
                 if (isFlywheelStableGate.trueForAtLeast(0.2)) state = LoaderState.LAUNCH;
-                if (request == LoaderState.READY) state = LoaderState.READY;
+                if (request != LoaderState.LAUNCH) state = LoaderState.READY;
                 break;
             case LAUNCH:
                 //intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -221,7 +224,7 @@ public class LoaderSubsystem {
                 isFlywheelStableGate.update();
                 if (elapsedTime.seconds() > 0.10) { // 0.20
                     if (isFlywheelStableGate.trueForAtLeast(0.10)) state = LoaderState.LAUNCH_NEXT;
-                    if (request == LoaderState.READY) {
+                    if (request != LoaderState.LAUNCH) {
                         gate.close();
                         state = LoaderState.GATE_WAIT;
                     }
@@ -245,34 +248,16 @@ public class LoaderSubsystem {
                     if (isFlywheelStableGate.trueForAtLeast(0.20)) { // 0.40
                         state = LoaderState.LAUNCH_NEXT;
                     }
-                    if (request == LoaderState.READY) {
-                        gate.close();
-                        state = LoaderState.GATE_WAIT;
+                    if (request != LoaderState.LAUNCH) {
+                        state = LoaderState.READY;
                     }
                 }
                 break;
-            case GATE_WAIT:
-                if (gate.isStable()) {
-                    transfer.setPower(0);
-                    intake.setPower(0);
-                    state = LoaderState.ADVANCE;
-                    elapsedTime.reset();
-                }
-                break;
-            case ADVANCE:
-                transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                transfer.setPower(0.7);
-                intake.setPower(0.7);
-                if (elapsedTime.seconds() > 0.45) {
-                    intake.setPower(0);
-                    transfer.setPower(0);
-                    elapsedTime.reset();
-                    state = LoaderState.WAIT_FOR_STOP_THEN_REGRESS_INTAKE;
-                }
-                break;
+            default:
+                telemetry.addData("Invalid state!", state.name());
         }
-        telemetry.addLine(state.name());
+        telemetry.addData("CURRENT LOADER STATE: ", state.name());
+        telemetry.addData("REQUEST LOADER STATE: ", request.name());
     }
 
     public int getShots() {

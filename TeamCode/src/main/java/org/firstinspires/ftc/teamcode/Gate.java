@@ -27,8 +27,8 @@ public class Gate {
     public boolean trueForAtLeast(double required) {
         if (!gate.getAsBoolean()) reset();
         if (debugTelemetry != null) {
-            debugTelemetry.addData("Time", time.seconds());
-            debugTelemetry.addData("Till", required);
+            //debugTelemetry.addData("Time", time.seconds());
+            //debugTelemetry.addData("Till", required);
         }
         return time.seconds() >= required;
     }
