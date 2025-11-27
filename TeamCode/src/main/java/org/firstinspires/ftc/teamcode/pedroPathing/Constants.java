@@ -21,7 +21,7 @@ public class Constants {
             //TRANSLATION
             .useSecondaryTranslationalPIDF(true)
             /*far */.translationalPIDFCoefficients(new PIDFCoefficients(1d, 0.0d, 0.0d, 0.0d))
-            /*near*/.secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(0.05d, 0.0d, 0.006d, 0.03d))
+            /*near*/.secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(0.05d, 0.0d, 0.006d, 0.07d))
             .translationalPIDFSwitch(10.0d)
             //HEADING
             .useSecondaryHeadingPIDF(true)
@@ -41,7 +41,15 @@ public class Constants {
             100.0d,
             1.0d,
             1.0d);
-    public static PinpointConstants LOCALIZER_CONSTANTS = new PinpointConstants().distanceUnit(DistanceUnit.MM).forwardPodY(130.0d).strafePodX(213.0d).hardwareMapName("odo1").encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD).forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD).strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
+    public static PinpointConstants LOCALIZER_CONSTANTS = new PinpointConstants()
+            .distanceUnit(DistanceUnit.MM)
+            .forwardPodY(130.0d)
+            .strafePodX(213.0d)
+            .hardwareMapName("odo1")
+            //.encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
+            .customEncoderResolution(19.89436789f*72.0f/74.0f) //ticks-per-mm
+            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
+            .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
     public static MecanumConstants DRIVE_CONSTANTS = new MecanumConstants()
             .maxPower(1.0d)
             .xVelocity(64.3d)

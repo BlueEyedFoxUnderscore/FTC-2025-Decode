@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmodes.auto;
 
 import static java.lang.StrictMath.PI;
+import static java.lang.StrictMath.max;
 import static java.lang.StrictMath.nextAfter;
 
 import com.bylazar.field.FieldManager;
@@ -15,6 +16,7 @@ import com.pedropathing.math.Vector;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.PoseHistory;
+import com.qualcomm.ftccommon.SoundPlayer;
 import com.qualcomm.hardware.limelightvision.LLFieldMap;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -44,21 +46,6 @@ public class PathAuto extends LinearOpMode {
 
     private enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, SAMPLE_TAGS_4}
 
-    private static final class Paths {
-        public static final Path BACK_UP_FROM_START = new Path(new BezierLine (new Pose(121.716, 124.080), new Pose(95.381,  104.835)));
-        public static final Path GROUP_APPROACH_1   = new Path(new BezierCurve(new Pose(95.381,  104.835), new Pose(85.758,  82.382), new Pose(97.069,  83.564)));
-        public static final Path GROUP_PICKUP_1     = new Path(new BezierLine (new Pose(97.069,  83.564),  new Pose(120.093, 83.564)));
-        public static final Path GROUP_SHOOT_1      = new Path(new BezierLine (new Pose(120.093, 83.564),  new Pose(97.069,  104.835)));
-        public static final Path GROUP_APPROACH_2   = new Path(new BezierCurve(new Pose(97.069,  104.835), new Pose(86.771,  59.254), new Pose(102.134, 59.254)));
-        public static final Path GROUP_PICKUP_2     = new Path(new BezierLine (new Pose(102.134, 59.254),  new Pose(120.586, 59.254)));
-        public static final Path GROUP_SHOOT_2_A    = new Path(new BezierLine (new Pose(120.586, 59.254),  new Pose(110.586, 59.254)));
-        public static final Path GROUP_SHOOT_2      = new Path(new BezierLine (new Pose(110.586, 59.254),  new Pose(95.381,  104.835)));
-        public static final Path GROUP_APPROACH_3   = new Path(new BezierCurve(new Pose(95.381,  104.835), new Pose(88.797,  35.620), new Pose(101.627, 35.620)));
-        public static final Path GROUP_PICKUP_3     = new Path(new BezierLine (new Pose(101.627, 35.620),  new Pose(125.093, 35.620)));
-        public static final Path GROUP_SHOOT_3      = new Path(new BezierLine (new Pose(125.093, 35.620),  new Pose(95.550,  104.666)));
-        public static final Path GO_TO_SQUARE       = new Path(new BezierLine (new Pose(95.550,  104.666), new Pose(105.341, 33.257)));
-    }
-
     private AutoState state = AutoState.READY;
 
     public void setRunAtEnd(Runnable runAtEnd) {
@@ -83,7 +70,8 @@ public class PathAuto extends LinearOpMode {
         } catch (Exception e) {
             throw new RuntimeException("Drawing failed " + e);
         }
-        //waitForStart();
+        int mediumBeep = hardwareMap.appContext.getResources().getIdentifier("beep", "raw", hardwareMap.appContext.getPackageName());
+
         while (!isStarted() && !isStopRequested()) {
             follower.update();
             try {
@@ -94,52 +82,16 @@ public class PathAuto extends LinearOpMode {
             }
         }
 
-        PathChain path1 = follower.pathBuilder()
-                .addPath(Paths.BACK_UP_FROM_START)
-                    .setConstantHeadingInterpolation(Math.toRadians(36))
-                    .addParametricCallback(0, this::spinUp)
-                    .addParametricCallback(0.99, this::launchBalls2)
-                .addPath(stayAt(Paths.BACK_UP_FROM_START.endPose()))
-                    .setConstantHeadingInterpolation(Math.toRadians(36))
-                    .addParametricCallback(0, this::reorient)
-                .addPath(Paths.GROUP_APPROACH_1)
-                    .setLinearHeadingInterpolation(Math.toRadians(36), 0)
-                    .addParametricCallback(0, RobotContainer.LOADER::intake)
-                    .addParametricCallback(0.9, () -> this.setFollowerMaxPower(0.5))
-                .addPath(Paths.GROUP_PICKUP_1)
-                    .setConstantHeadingInterpolation(0)
-                    .addParametricCallback(0.99, () -> this.setFollowerMaxPower(1.0))
-                .addPath(Paths.GROUP_SHOOT_1)
-                    .setLinearHeadingInterpolation(0, Math.toRadians(36))
-                    .addParametricCallback(0, this::spinUp)
-                    .addParametricCallback(0.9, RobotContainer.LOADER::cancelIntake)
-                    .addParametricCallback(0.99, this::launchBalls3)
-                .addPath(Paths.GROUP_APPROACH_2)
-                    .setLinearHeadingInterpolation(Math.toRadians(36), 0)
-                    .addParametricCallback(0.1, RobotContainer.LOADER::cancelLaunch)
-                    .addParametricCallback(0.2, RobotContainer.LOADER::intake)
-                    .addParametricCallback(0.9, () -> this.setFollowerMaxPower(0.5))
-                .addPath(Paths.GROUP_PICKUP_2)
-                    .setConstantHeadingInterpolation(0)
-                    .addParametricCallback(0.99, () -> this.setFollowerMaxPower(1.0))
-                .addPath(Paths.GROUP_SHOOT_2_A)
-                    .setConstantHeadingInterpolation(0)
-                    .addParametricCallback(0.2, this::spinUp)
-                .addPath(Paths.GROUP_SHOOT_2)
-                    .setLinearHeadingInterpolation(0, Math.toRadians(36))
-                    .addParametricCallback(0.8, RobotContainer.LOADER::cancelIntake)
-                    .addParametricCallback(0.99, this::launchBalls3)
-                .build();
-
         RedAuto.init(follower, this);
 
         follower.followPath(RedAuto.START);
+        //follower.followPath(RedAuto.APRIL_TEST);
 
         LinkedList<Pose> samples = new LinkedList<>();
         ElapsedTime elapsedTime = new ElapsedTime();
 
         int successfulRecogs = 0;
-
+        int maxsamples=0;
         while ((!done) && opModeIsActive()) {
 
             follower.update();
@@ -162,19 +114,22 @@ public class PathAuto extends LinearOpMode {
                     }
                     break;
                 case SAMPLE_TAGS:
+                    setFollowerMaxPower(0);
                     elapsedTime.reset();
                     samples.clear();
                     state = AutoState.SAMPLE_TAGS_2;
                 case SAMPLE_TAGS_2: /// Get apriltag samples
-                    if (elapsedTime.seconds() > 2) {
+                    if (elapsedTime.seconds() > 0.3) {
                         elapsedTime.reset();
                         state = AutoState.SAMPLE_TAGS_3;
+                        SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                     }
                     break;
                 case SAMPLE_TAGS_3: /// Get apriltag samples
                     addSampleIfAvailable(samples);
-                    if (elapsedTime.seconds() > 0.6) {
+                    if (elapsedTime.seconds() > 0.5) {
                         state = AutoState.SAMPLE_TAGS_4;
+                        SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                     }
                     else break;
                 case SAMPLE_TAGS_4:
@@ -184,6 +139,7 @@ public class PathAuto extends LinearOpMode {
                     }
                     startNextPath();
                     state = AutoState.READY;
+                    setFollowerMaxPower(1);
                     break;
                 default: int fucksUpTheProgram = 0 / 0;
             }
@@ -205,6 +161,8 @@ public class PathAuto extends LinearOpMode {
             // telemetry.addData("Velocity", follower.getVelocity().getMagnitude());
             telemetry.addData("Successful localizations", successfulRecogs);
             telemetry.addData("AutoState", state.name());
+            if (samples.size() > maxsamples) maxsamples = samples.size();
+            telemetry.addData("Apriltag Samples", maxsamples);
             try {
                 Drawing.drawRobot(follower.getPose());
                 Drawing.sendPacket();
@@ -235,11 +193,6 @@ public class PathAuto extends LinearOpMode {
         RobotContainer.FLYWHEEL.setRequested(0, 0);
     }
 
-    private void holdEndOfPath() {
-        follower.pausePathFollowing();
-        follower.holdPoint(follower.getCurrentPath().endPose());
-    }
-
     void launchBalls2() {
         RobotContainer.LOADER.setLoaded(2);
         RobotContainer.LOADER.resetShots();
@@ -248,7 +201,6 @@ public class PathAuto extends LinearOpMode {
     }
 
     void launchBalls3() {
-        holdEndOfPath();
         RobotContainer.LOADER.setLoaded(3);
         RobotContainer.LOADER.resetShots();
         RobotContainer.LOADER.launch();
@@ -256,7 +208,6 @@ public class PathAuto extends LinearOpMode {
     }
 
     void reorient() {
-        holdEndOfPath();
         state = AutoState.SAMPLE_TAGS;
     }
 

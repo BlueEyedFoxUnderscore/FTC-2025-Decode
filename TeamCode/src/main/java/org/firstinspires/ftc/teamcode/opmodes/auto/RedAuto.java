@@ -4,6 +4,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
@@ -22,7 +23,37 @@ public class RedAuto {
     public static PathChain GROUPSHOOT3;
     public static PathChain GO_TO_SQUARE;
 
+    public static PathChain APRIL_TEST;
+    public static PathChain APRIL_TEST_2;
+    public static PathChain APRIL_TEST_3;
+    public static PathChain APRIL_TEST_4;
+
     public static void init(Follower follower, PathAuto auto) {
+        APRIL_TEST = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(new Pose(121.716, 124.080), new Pose(95.381, 104.835))
+                )
+                .setConstantHeadingInterpolation(Math.toRadians(36))
+                .addParametricCallback(0, () -> auto.setNextPath(APRIL_TEST_2))
+                .addParametricCallback(0, () -> auto.setRunAtEnd(auto::reorient))
+                .build();
+
+        APRIL_TEST_2 = follower.pathBuilder()
+                .addPath(new Path(new BezierLine (new Pose(95.381, 104.835), new Pose(144.0-24.0*2-17.25/2.0,  144.0-24.0*1+16.0/2.0))))
+                .setLinearHeadingInterpolation(Math.toRadians(36), 0)
+                .build();
+
+        APRIL_TEST_3 = follower.pathBuilder()
+                .addPath(new Path(new BezierLine (new Pose(95.381, 104.835), new Pose(144.0-24.0*2-17.25/2.0,  144.0-24.0*4+16.0/2.0))))
+                .setLinearHeadingInterpolation(Math.toRadians(36), 0)
+                .build();
+
+        APRIL_TEST_4 = follower.pathBuilder()
+                .addPath(new Path(new BezierLine (new Pose(95.381, 104.835), new Pose(144.0-24.0*1-17.25/2.0,  144.0-24.0*0.5+1.5*0))))
+                .setLinearHeadingInterpolation(Math.toRadians(36), 0)
+                .build();
+
         START = follower
                 .pathBuilder()
                 .addPath(
@@ -32,7 +63,6 @@ public class RedAuto {
                     .addParametricCallback(.00, auto::spinUp)
                     .addParametricCallback(.00, () -> auto.setNextPath(REORIENT))
                     .addParametricCallback(.00, () -> auto.setRunAtEnd(auto::launchBalls2))
-                    .addParametricCallback(.99, auto::reorient)
                 .build();
 
         REORIENT = follower
@@ -56,7 +86,7 @@ public class RedAuto {
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                     .addParametricCallback(.02, RobotContainer.LOADER::intake)
-                    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.5))
+                //    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.5))
                 .addPath(
                         new BezierLine(new Pose(97.069, 83.564), new Pose(121.210, 83.564))
                 )
@@ -82,7 +112,7 @@ public class RedAuto {
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                     .addParametricCallback(.02, RobotContainer.LOADER::intake)
-                    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.5))
+                //    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.5))
                 .addPath(
                         new BezierLine(new Pose(96.900, 59.592), new Pose(121.547, 59.254))
                 )
@@ -116,7 +146,7 @@ public class RedAuto {
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                     .addParametricCallback(.02, RobotContainer.LOADER::intake)
-                    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.5))
+                //    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.5))
                 .addPath(
                         new BezierLine(new Pose(97.069, 35.283), new Pose(121.210, 35.620))
                 )
