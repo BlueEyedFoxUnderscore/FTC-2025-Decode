@@ -44,7 +44,7 @@ public class PathAuto extends LinearOpMode {
     private boolean acceptedPose = false;
     private boolean wasCalled = false;
 
-    private enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, SAMPLE_TAGS_4}
+    private enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, GET_TAG_ID, GET_TAG_ID_2, GET_TAG_ID_3, SAMPLE_TAGS_4}
 
     private AutoState state = AutoState.READY;
 
@@ -113,6 +113,18 @@ public class PathAuto extends LinearOpMode {
                         state = AutoState.READY;
                     }
                     break;
+                case GET_TAG_ID:
+                    setFollowerMaxPower(0);
+                    elapsedTime.reset();
+                    state = AutoState.GET_TAG_ID_2;
+                case GET_TAG_ID_2:
+                    if (elapsedTime.seconds() > 0.3) {
+                        state = AutoState.GET_TAG_ID_3;
+                    }
+                case GET_TAG_ID_3:
+                    if (camera.getLatestResult().getFiducialResults().size() > 0 || elapsedTime.seconds() > 0.5) {
+                        //telemetry.addData(camera);
+                    }
                 case SAMPLE_TAGS:
                     setFollowerMaxPower(0);
                     elapsedTime.reset();
@@ -231,7 +243,7 @@ public class PathAuto extends LinearOpMode {
 
     private void addSampleIfAvailable(LinkedList<Pose> poses) {
         LLResult result = camera.getLatestResult();
-        if (result.isValid() & result.getTimestamp() != lastSample) {
+        if (result.isValid() && result.getTimestamp() != lastSample) {
             lastSample = result.getTimestamp();
             Pose3D botpose = result.getBotpose();
             Position position = botpose.getPosition();
@@ -295,7 +307,6 @@ public class PathAuto extends LinearOpMode {
         //Pedro Pathing has built-in KalmanFilter and LowPassFilter classes you can use for this
         //Use this to convert standard FTC coordinates to standard Pedro Pathing coordinates
         LLResult result = camera.getLatestResult();
-        camera.uploadFieldmap(new LLFieldMap(), 1);
         wasCalled = true;
         if (result != null) {
             if (result.isValid()) {

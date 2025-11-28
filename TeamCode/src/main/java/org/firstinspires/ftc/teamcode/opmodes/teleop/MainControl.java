@@ -33,7 +33,7 @@ public class MainControl extends OpMode {
     //GoBildaPinpointDriver odometry2;
 
     //private MotorGroup shooterGroup;
-
+    private boolean canright = true, canleft = true, canup = true, candown = true;
     @Override
     public void init_loop() {
         follower.update();
@@ -66,13 +66,17 @@ public class MainControl extends OpMode {
         //odometry2.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
         //odometry2.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
     }
+
+    private double flywheelSpeed = 2600;
     double offset = 0;
     @Override
     public void loop() {
         updateDrive();
+        telemetry.addData("Requested Speed", flywheelSpeed);
+        telemetry.addData("Flywheel Speed", RobotContainer.FLYWHEEL);
 
         Drawing.drawDebug(follower);
-        Drawing.sendPacket();
+        // Drawing.sendPacket();
         if (gamepad1.y) {
             reorient();
         }
@@ -98,6 +102,34 @@ public class MainControl extends OpMode {
         telemetry.update();
         telemetry.addLine(String.valueOf(RobotContainer.FLYWHEEL.getSpeed()));
         telemetry.clear();
+
+
+        if (gamepad1.dpad_right) {
+            if (canright) {
+                canright=false;
+                flywheelSpeed += 02.5;}
+        } else canright = true;
+        if (gamepad1.dpad_left) {
+            if (canleft) {
+                canleft = false;
+                flywheelSpeed -= 02.5;
+            }
+        } else canleft = true;
+        if (gamepad1.dpad_up) {
+            if (canup) {
+                canup = false;
+                flywheelSpeed += 120.;
+            }
+        } else canup = true;
+        if (gamepad1.dpad_down) {
+            if (candown) {
+                candown = false;
+                flywheelSpeed -= 120.;
+            }
+        } else candown = true;
+
+
+
 //        gate.setPosition(gamepad1.right_trigger);
     }
 
@@ -123,7 +155,7 @@ public class MainControl extends OpMode {
     }
 
     private void spinUp() {
-        RobotContainer.FLYWHEEL.setRequested(2800, 2400);
+        RobotContainer.FLYWHEEL.setRequested(flywheelSpeed, flywheelSpeed * 12.0/14.0); // 2800 2400
     }
 
     private void spinDown() {
