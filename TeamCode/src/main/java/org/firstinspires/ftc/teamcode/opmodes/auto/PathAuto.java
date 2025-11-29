@@ -32,6 +32,7 @@ import org.firstinspires.ftc.teamcode.Gate;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 @Autonomous
@@ -44,7 +45,8 @@ public class PathAuto extends LinearOpMode {
     private boolean acceptedPose = false;
     private boolean wasCalled = false;
 
-    private enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, GET_TAG_ID, GET_TAG_ID_2, GET_TAG_ID_3, SAMPLE_TAGS_4}
+    public  enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, GET_TAG_ID, GET_TAG_ID_2, GET_TAG_ID_3, SAMPLE_TAGS_4}
+    private enum BallState {PPG, PGP, GPP}
 
     private AutoState state = AutoState.READY;
 
@@ -53,6 +55,12 @@ public class PathAuto extends LinearOpMode {
     }
 
     private Runnable runAtEnd = null, tempRun = null; // () -> {};
+    private BallState gamestate = null;
+    int tag;
+    int ppg = 0;
+    int pgp = 0;
+    int gpp = 0;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -84,7 +92,7 @@ public class PathAuto extends LinearOpMode {
 
         RedAuto.init(follower, this);
 
-        follower.followPath(RedAuto.START);
+        follower.followPath(RedAuto.LOOK_AT_THINGY);
         //follower.followPath(RedAuto.APRIL_TEST);
 
         LinkedList<Pose> samples = new LinkedList<>();
@@ -93,7 +101,8 @@ public class PathAuto extends LinearOpMode {
         int successfulRecogs = 0;
         int maxsamples=0;
         while ((!done) && opModeIsActive()) {
-
+            //telemetry.addData("runAtEnd", runAtEnd != null? runAtEnd.toString(): "null");
+            //telemetry.addData("nextPath", nextPath != null? nextPath.toString(): "null");
             follower.update();
             if (runAtEnd != null && !follower.isBusy()) {
                 tempRun = runAtEnd;
@@ -114,17 +123,39 @@ public class PathAuto extends LinearOpMode {
                     }
                     break;
                 case GET_TAG_ID:
-                    setFollowerMaxPower(0);
                     elapsedTime.reset();
+                    samples.clear();
+                    gpp = pgp = ppg = 0;
                     state = AutoState.GET_TAG_ID_2;
+                    break;
                 case GET_TAG_ID_2:
-                    if (elapsedTime.seconds() > 0.3) {
-                        state = AutoState.GET_TAG_ID_3;
+                    LLResult result = camera.getLatestResult();
+                    if (!result.getFiducialResults().isEmpty()) {
+                        switch (result.getFiducialResults().get(0).getFiducialId()) {
+                            case 21:
+                                gpp += 1;
+                                break;
+                            case 22:
+                                pgp += 1;
+                                break;
+                            case 23:
+                                ppg += 1;
+                                break;
+                        }
                     }
-                case GET_TAG_ID_3:
-                    if (camera.getLatestResult().getFiducialResults().size() > 0 || elapsedTime.seconds() > 0.5) {
-                        //telemetry.addData(camera);
+                    if (elapsedTime.seconds() > 0.5) {
+                        if (Math.max(Math.max(gpp, pgp), ppg) == gpp) {
+                            gamestate = BallState.GPP;
+                        }
+                        if (Math.max(Math.max(gpp, pgp), ppg) == pgp) {
+                            gamestate = BallState.PGP;
+                        }
+                        if (Math.max(Math.max(gpp, pgp), ppg) == ppg) {
+                            gamestate = BallState.PPG;
+                        }
+                        state = AutoState.READY;
                     }
+                    break;
                 case SAMPLE_TAGS:
                     setFollowerMaxPower(0);
                     elapsedTime.reset();
@@ -156,6 +187,11 @@ public class PathAuto extends LinearOpMode {
                 default: int fucksUpTheProgram = 0 / 0;
             }
 
+            telemetry.addData("b a l l", gamestate != null? gamestate.name(): "null");
+            telemetry.addData("ppg", ppg);
+            telemetry.addData("pgp", pgp);
+            telemetry.addData("gpp", gpp);
+
             isStoppedGate.update();
             if (isStoppedGate.trueForAtLeast(2)) {
                 isStoppedGate.reset();
@@ -183,8 +219,12 @@ public class PathAuto extends LinearOpMode {
             }
             telemetry.update();
         }
+
     }
 
+    public void setState(AutoState state) {
+        this.state = state;
+    }
 
     public void setNextPath(PathChain nextPath) {
         this.nextPath = nextPath;

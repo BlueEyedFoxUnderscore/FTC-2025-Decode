@@ -22,6 +22,7 @@ public class RedAuto {
     public static PathChain GROUPPICKUP3;
     public static PathChain GROUPSHOOT3;
     public static PathChain GO_TO_SQUARE;
+    public static PathChain LOOK_AT_THINGY;
 
     public static PathChain APRIL_TEST;
     public static PathChain APRIL_TEST_2;
@@ -179,6 +180,15 @@ public class RedAuto {
                         new BezierLine(new Pose(95.381, 104.835), new Pose(105.341, 33.426))
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(90))
+                .build();
+
+        LOOK_AT_THINGY = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(new Pose(120.872, 126.443), new Pose(105.172, 114.288))
+                )
+                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(135))
+                .addParametricCallback(0.95, () -> auto.setRunAtEnd(() -> auto.setState(PathAuto.AutoState.GET_TAG_ID)))
                 .build();
     }
 }
