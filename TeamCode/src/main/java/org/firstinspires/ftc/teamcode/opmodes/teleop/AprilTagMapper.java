@@ -5,10 +5,15 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import java.io.File;
+import java.io.FileInputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayDeque;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
+import java.util.TreeMap;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -17,56 +22,161 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 
 @TeleOp//(name = "***FTC OpMode 2", group = "TeleOp")
 public class AprilTagMapper extends OpMode {
     private Limelight3A camera; //any camera here
+    TreeMap<Integer, LLFieldMap.Fiducial> currentFudicials;
+
+
 
     @Override
     public final void init() {
         camera = hardwareMap.get(Limelight3A.class, "limelight");
         camera.pipelineSwitch(0);
         camera.start();
+        File dir = new File("/storage/emulated/0/FIRST/settings");
+        if (dir.exists() && dir.isDirectory()) {
+            osFiles = dir.listFiles();
+            if (osFiles != null) {
+                for (File f : osFiles) {
+                    if (f.isFile() && f.getName().toLowerCase().endsWith(".fmap")) {
+                        fMaps.add(f.getName());   // or f.getName()
+                    }
+                }
+            }
+        }
+        currentFudicials=readFMap(fMaps.get(0));
+        loadFiducial(currentFudicials.firstEntry().getValue());
     }
 
+    private void loadFiducial(LLFieldMap.Fiducial fiducial)
+    {
+        if (fiducial == null) {
+            file_pose_x = 0;
+            file_pose_y = 0;
+            file_pose_z = 0;
+            file_pose_theta = 0;
+        }
+        else {
+            tag_id = fiducial.getId();
+            file_pose_x = fiducial.getTransform().get(3);
+            file_pose_y = fiducial.getTransform().get(7);
+            file_pose_z = fiducial.getTransform().get(11);
+            double r00 = fiducial.getTransform().get(0);
+            double r10 = fiducial.getTransform().get(4);
+
+            file_pose_theta = Math.toDegrees(Math.atan2(r10, r00));
+        }
+    }
+
+    private final TreeMap<Integer, LLFieldMap.Fiducial> readFMap(String filename)
+    {
+        TreeMap<Integer, LLFieldMap.Fiducial> fiducials = new TreeMap<>();
+        JSONObject json = null;
+        String path = "/storage/emulated/0/FIRST/settings/" + filename;
+
+        // ---- Load JSON from file ----
+        try (FileInputStream fis = new FileInputStream(path);
+             Scanner s = new Scanner(fis, "UTF-8").useDelimiter("\\A"))
+        {
+            String jsonTxt = s.hasNext() ? s.next() : "";
+            json = new JSONObject(jsonTxt);
+
+        } catch (Exception ignored) { }
+
+        if (json != null)
+        {
+            try {
+                // ----- Parse fiducials -----
+
+                JSONArray arr = json.optJSONArray("fiducials");
+                if (arr != null)
+                {
+                    for (int i = 0; i < arr.length(); i++)
+                    {
+                        JSONObject fObj = arr.optJSONObject(i);
+                        if (fObj == null) continue;
+
+                        // ----- EXACTLY Limelight’s Fiducial(JSONObject json) logic -----
+                        int id = fObj.optInt("id", -1);
+                        double size = fObj.optDouble("size", 165.1);
+                        String family = fObj.optString("family", "apriltag3_36h11_classic");
+
+                        ArrayList<Double> transform = new ArrayList<>();
+                        JSONArray tArr = fObj.optJSONArray("transform");
+                        if (tArr != null) {
+                            for (int j = 0; j < tArr.length(); j++) {
+                                transform.add(tArr.optDouble(j, 0.0));
+                            }
+                        }
+
+                        boolean unique = fObj.optBoolean("unique", true);
+
+                        fiducials.put(
+                                id,
+                                new LLFieldMap.Fiducial(id, size, family, transform, unique)
+                        );
+                    }
+                }
+
+            } catch (Exception ignored) { }
+        }
+
+        return fiducials;
+    }
 
     @Override
     public final void init_loop() {
-        telemetry.addLine("LIMELIGHT FIELD MAP UPDATER");
+        telemetry.addLine(
+        "This utility updates Limelights field maps. Tag "
+        +"poses are calculated by composing a chosen robot field "
+        +"with an AprilTag measurement taken with the robot placed "
+        +"at the chosen pose. Choose poses so the tag is you are "
+        +"updating is close to and visible to the Limelight. For "
+        +"the purposes of this utility, the front of the robot is "
+        +"DEFINED TO BE the side of the robot that the camera "
+        +"looks out of.");
+        telemetry.addLine("");
+        telemetry.addLine("Connecting via ADB then load fmap(s) using");
+        telemetry.addLine("");
+        telemetry.addLine("adb push mapname.fmap /storage/emulated/0/FIRST/settings/mapname.fmap");
         telemetry.addLine("");
         telemetry.addLine(
-        "This utility updates your Limelights's field map "
-        +"by adding, removing, or modifying tags individually. "
-        +"AprilTag locations are calculated by combining a selected "
-        +"robot field pose with an AprilTag measurement taken in the "
-        +"robot's coordinate system. The robot is placed so any "
-        +"corner is aligned to any tile intersection and so the robot "
-        +"faces and is parallel to any wall.  The tag must be close "
-        +"to and visible to the Limelight.  For the purposes of this "
-        +"utility, the front of the robot is the side the camera looks "
-        +"out of.  Assumes pipeline 0.");
-        telemetry.addLine("");
-        telemetry.addLine(
-        "WARNING: The position of the Limelight relative "
-        +"to the robot must be correctly set in the LimeLight's web "
-        +"interface.  Any error there will propagate into the "
-        +"AprilTag's calculated position.");
+        "WARNING: The Limelight's offset in the web interface "
+        +"must be set to be relative to the x/y center of the robot. Any "
+        +"deviation will show up as error in the AprilTag's calculated "
+        +"position.");
     }
 
-    private final ElapsedTime writeElapsed = new ElapsedTime();
-    private final ElapsedTime removeElapsed = new ElapsedTime();
-
+    private final ElapsedTime commitTagElapsed = new ElapsedTime();
+    private final ElapsedTime removeTagElapsed = new ElapsedTime();
+    File[] osFiles;
+    List<String> fMaps = new ArrayList<>();
+    private int fmapIndex =0;
     @Override
     public final void start() {
-        writeElapsed.reset();
-        removeElapsed.reset();
+        commitTagElapsed.reset();
+        removeTagElapsed.reset();
     }
 
     private final int MAX_MODE_ID = 5;
     private int tag_id = 0;
-    private int mod_id = 0;
-    private int wheel_id = 0;
+    private enum MODE {
+        FMAP,
+        TAG_ID,
+        ROBOT_LENGTH,
+        ROBOT_WIDTH,
+        TILE_X,
+        TILE_Y,
+        ROBOT_CORNER,
+        ROBOT_HEADING
+    }
+    private MODE mode = MODE.values()[0];
+    private int heading_id = 0;
     private int facing_id = 0;
     private double rear_to_front = 17.2;
     private double left_to_right = 16;
@@ -77,11 +187,13 @@ public class AprilTagMapper extends OpMode {
     private double known_pose_y=0;
     private double known_pose_theta=0;
 
-    private double tag_pose_x=0;
-    private double tag_pose_y=0;
-    private double tag_pose_theta=0;
+    private double file_pose_x=0;
+    private double file_pose_y=0;
+    private double file_pose_z=0;
+    private double file_pose_theta=0;
 
-    DecimalFormat df = new DecimalFormat("00.000");
+    DecimalFormat df_inches = new DecimalFormat("00.00");
+    DecimalFormat df_meters = new DecimalFormat("0.000");
     private static final double INCHES_PER_METER = 39.3701;
     double reported_pose_x =0d, reported_pose_y =0d, reported_pose_z =0d, reported_pose_theta =0d;
     double reported_robottotag_x =0d, reported_robottotag_y =0d, reported_robottotag_z =0d, reported_robottotag_theta =0d;
@@ -181,55 +293,97 @@ public class AprilTagMapper extends OpMode {
                 reported_robottotag_theta /= reported_robottotag_theta_list.size();
             }
         }
-        if((!gamepad1.a && !gamepad2.a)||(gamepad1.x||gamepad2.x)) writeElapsed.reset();
-        if((!gamepad1.x && !gamepad2.x)||(gamepad1.a||gamepad2.a)) removeElapsed.reset();
-        int writeSecondsLeft = (int) (5.9d - writeElapsed.seconds());
-        int writeSecondsLeftBlink = (int) ((5.9d - writeElapsed.seconds())*4);
-        int removeSecondsLeft = (int) (5.9d - removeElapsed.seconds());
-        int removeSecondsLeftBlink = (int) ((5.9d - removeElapsed.seconds())*4);
-        telemetry.addData("      CURRENTLY MODIFYING APRILTAG ID# ", tag_id);
-        telemetry.addLine("       L/R Bumper: change AprilTag ID to modify");
-        if (writeSecondsLeft>0)
-            telemetry.addLine(writeSecondsLeftBlink%2==1?"             HOLD A for "+writeSecondsLeft+" sec. to record this tag":"");
-        else
-            telemetry.addLine("                               TAG WRITTEN");
-        if (removeSecondsLeft>0)
-            telemetry.addLine(removeSecondsLeftBlink%2==1?"            HOLD X for "+removeSecondsLeft+" sec. to remove this tag":"");
-        else
-            telemetry.addLine("                              TAG REMOVED");
-        telemetry.addLine("---------------------------------------------------------------------------");
+        if((!gamepad1.b && !gamepad2.b)||(gamepad1.a||gamepad2.a)) removeTagElapsed.reset();
+        int removeTagSecondsLeft = (int) (5.9d - removeTagElapsed.seconds());
+        int removeTagFileBlink = (int) ((5.9d - removeTagElapsed.seconds())*4);
+        if((!gamepad1.a && !gamepad2.a)||(gamepad1.b||gamepad2.b)) commitTagElapsed.reset();
+        int commitTagSecondsLeft = (int) (5.9d - commitTagElapsed.seconds());
+        int commitTagBlink = (int) ((5.9d - commitTagElapsed.seconds())*4);
+        if (removeTagSecondsLeft>0)
+            telemetry.addLine(removeTagFileBlink%2==1?"                 HOLD A for "+removeTagSecondsLeft+" sec. to update tag":"");
+        else {
+            telemetry.addLine("The tag has been saved to the internal file and the file has been sent to the Limelight. "
+                    + "You can download the modified file using:");
+            telemetry.addLine("");
+            telemetry.addLine("adb pull /storage/emulated/0/FIRST/settings/"+fMaps.get(fmapIndex));
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+        }
+        if (commitTagSecondsLeft>0)
+            telemetry.addLine(commitTagBlink%2==1?"                 HOLD B for "+commitTagSecondsLeft+" sec. to remove tag":"");
+        else{
+            telemetry.addLine("The tag has been REMOVED to the internal file and the file has been sent to the Limelight. "
+                    +"You can download the modified file using:");
+            telemetry.addLine("");
+            telemetry.addLine("adb pull /storage/emulated/0/FIRST/settings/"+fMaps.get(fmapIndex));
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+            telemetry.addLine("");
+        }
+
+        telemetry.addLine("       L/R Bumpers: Select ID for NEW AprilTag");
         telemetry.addLine("      U/D Dpad:  menu     R/L Dpad: change value");
         telemetry.addLine("");
-        telemetry.addData((mod_id==0?"[X]":"[   ]")+" Robot length rear-to-front (inches)", rear_to_front);
-        telemetry.addData((mod_id==1?"[X]":"[   ]")+" Robot width left-to-right (inches)", left_to_right);
-        telemetry.addData((mod_id==2?"[X]":"[   ]")+" # tiles robot corner is +x from field center", xtilecenter);
-        telemetry.addData((mod_id==3?"[X]":"[   ]")+" # tiles robot corner is +y from field center", ytilecenter);
-        switch (wheel_id) {
+
+        telemetry.addData((mode == MODE.FMAP?"[X]":"[   ]")+" Field Map", fMaps.get(fmapIndex));
+        telemetry.addData((mode == MODE.TAG_ID?"[X]":"[   ]")+" AprilTag ID", tag_id);
+        telemetry.addData((mode == MODE.ROBOT_LENGTH?"[X]":"[   ]")+" Robot length rear-to-front (inches)", rear_to_front);
+        telemetry.addData((mode == MODE.ROBOT_WIDTH ?"[X]":"[   ]")+" Robot width left-to-right (inches)", left_to_right);
+        telemetry.addData((mode == MODE.TILE_X      ?"[X]":"[   ]")+" # tiles robot corner is +x from field center", xtilecenter);
+        telemetry.addData((mode == MODE.TILE_Y      ?"[X]":"[   ]")+" # tiles robot corner is +y from field center", ytilecenter);
+        switch (heading_id) {
             case 0:
-                telemetry.addLine((mod_id==4?"[X]":"[   ]")+" FRONT RIGHT corner of robot on intersection.");
+                telemetry.addLine((mode == MODE.ROBOT_CORNER?"[X]":"[   ]")+" FRONT RIGHT corner of robot on intersection.");
                 break;
             case 1:
-                telemetry.addLine((mod_id==4?"[X]":"[   ]")+" FRONT LEFT corner of robot on intersection.");
+                telemetry.addLine((mode == MODE.ROBOT_CORNER?"[X]":"[   ]")+" FRONT LEFT corner of robot on intersection.");
                 break;
             case 2:
-                telemetry.addLine((mod_id==4?"[X]":"[   ]")+" REAR RIGHT corner of robot on intersection.");
+                telemetry.addLine((mode == MODE.ROBOT_CORNER?"[X]":"[   ]")+" REAR RIGHT corner of robot on intersection.");
                 break;
             case 3:
-                telemetry.addLine((mod_id==4?"[X]":"[   ]")+" REAR LEFT corner of robot on intersection.");
+                telemetry.addLine((mode == MODE.ROBOT_CORNER?"[X]":"[   ]")+" REAR LEFT corner of robot on intersection.");
                 break;
         }
         switch (facing_id) {
             case 0:
-                telemetry.addLine((mod_id==5?"[X]":"[   ]")+" Robot placed so forward is +X");
+                telemetry.addLine((mode == MODE.ROBOT_HEADING?"[X]":"[   ]")+" Robot placed so forward is +X");
                 break;
             case 1:
-                telemetry.addLine((mod_id==5?"[X]":"[   ]")+" Robot placed so forward is -X");
+                telemetry.addLine((mode == MODE.ROBOT_HEADING?"[X]":"[   ]")+" Robot placed so forward is -X");
                 break;
             case 2:
-                telemetry.addLine((mod_id==5?"[X]":"[   ]")+" Robot placed so forward is +Y");
+                telemetry.addLine((mode == MODE.ROBOT_HEADING?"[X]":"[   ]")+" Robot placed so forward is +Y");
                 break;
             case 3:
-                telemetry.addLine((mod_id==5?"[X]":"[   ]")+" Robot placed so forward is -Y");
+                telemetry.addLine((mode == MODE.ROBOT_HEADING?"[X]":"[   ]")+" Robot placed so forward is -Y");
                 break;
         }
         telemetry.addLine("");
@@ -237,7 +391,7 @@ public class AprilTagMapper extends OpMode {
         double ysign = 1;
         switch(facing_id) {
             case 0: // +x
-                switch(wheel_id) {
+                switch(heading_id) {
                     case 0: // Front Right
                         xsign = -1; // front
                         ysign =  1; // right
@@ -257,7 +411,7 @@ public class AprilTagMapper extends OpMode {
                 }
                 break;
             case 1: // -x
-                switch(wheel_id) {
+                switch(heading_id) {
                     case 0: // Front Right
                         xsign =  1; // front
                         ysign = -1; // right
@@ -277,7 +431,7 @@ public class AprilTagMapper extends OpMode {
                 }
                 break;
             case 2: // +y
-                switch(wheel_id) {
+                switch(heading_id) {
                     case 0: // Front Right
                         ysign = -1; // front
                         xsign = -1; // right
@@ -297,7 +451,7 @@ public class AprilTagMapper extends OpMode {
                 }
                 break;
             case 3: // -y
-                switch(wheel_id) {
+                switch(heading_id) {
                     case 0: // Front Right
                         ysign =  1; // front
                         xsign =  1; // right
@@ -346,52 +500,78 @@ public class AprilTagMapper extends OpMode {
         calculated_robottotag_y /= INCHES_PER_METER;
         double calculated_robottotag_z = reported_robottotag_z/INCHES_PER_METER;
 
-        telemetry.addLine("Selected: (" + df.format(known_pose_x) +"in, " + df.format(known_pose_y) + "in, 0in) @ "+df.format(known_pose_theta));
-        telemetry.addLine("Seen: (" + df.format(reported_pose_x) +"in, " + df.format(reported_pose_y) + "in, " + df.format(reported_pose_z) + "in) @ "+df.format(reported_pose_theta));
-        telemetry.addLine("The observed tag field pose for fmap is");
-        telemetry.addLine("(" + df.format(calculated_robottotag_x) +"m, " + df.format(calculated_robottotag_y) + "m, "+df.format(calculated_robottotag_z)+"m) @ "+df.format(calculated_robottotag_theta)    );
+        telemetry.addLine("BotSelect: (" + df_inches.format(known_pose_x) +"in, " + df_inches.format(known_pose_y) + "in, 0in)@"+ df_inches.format(known_pose_theta));
+        telemetry.addLine("BotViewed: (" + df_inches.format(reported_pose_x) +"in, " + df_inches.format(reported_pose_y) + "in, " + df_inches.format(reported_pose_z) + "in)@"+ df_inches.format(reported_pose_theta));
+        telemetry.addLine("TagFMAP: (" + df_meters.format(file_pose_x) +"m, " + df_meters.format(file_pose_y) + "m, "+ df_inches.format(file_pose_z)+"m)@"+ df_inches.format(file_pose_theta)    );
+        telemetry.addLine("TagViewed: (" + df_meters.format(calculated_robottotag_x) +"m, " + df_meters.format(calculated_robottotag_y) + "m, "+ df_inches.format(calculated_robottotag_z)+"m)@"+ df_inches.format(calculated_robottotag_theta)    );
         if (gamepad1.dpadDownWasPressed() || gamepad2.dpadDownWasPressed())
-            mod_id=mod_id<MAX_MODE_ID?mod_id+1:0;
+            mode = mode.ordinal() < MODE.values().length-1 ? MODE.values()[mode.ordinal()+1]:MODE.values()[0];
         if (gamepad1.dpadUpWasPressed() || gamepad2.dpadUpWasPressed())
-            mod_id=mod_id>0?mod_id-1:MAX_MODE_ID;
+            mode = mode.ordinal() >0 ? MODE.values()[mode.ordinal()-1]:MODE.values()[MODE.values().length-1];
 
         if (gamepad1.rightBumperWasPressed() || gamepad2.rightBumperWasPressed())
-            tag_id=tag_id<586?tag_id+1:0;
+            {
+                tag_id = tag_id < 586 ? tag_id+1 : 0;
+                loadFiducial(currentFudicials.get(tag_id));
+            }
         if (gamepad1.leftBumperWasPressed() || gamepad2.leftBumperWasPressed())
-            tag_id=tag_id>0?tag_id-1:586;
+            {
+                tag_id = tag_id > 0 ? tag_id-1 : 586;
+                loadFiducial(currentFudicials.get(tag_id));
+            }
 
-        switch (mod_id) {
-            case 0:
+        switch (mode) {
+            case FMAP:
+                if (gamepad1.dpadRightWasPressed() || gamepad2.dpadRightWasPressed()) {
+                    fmapIndex = fmapIndex < (fMaps.size() - 1) ? fmapIndex + 1 : 0;
+                    currentFudicials = readFMap(fMaps.get(fmapIndex));
+                    loadFiducial(currentFudicials.firstEntry().getValue());
+                }
+                if (gamepad1.dpadLeftWasPressed() || gamepad2.dpadLeftWasPressed()) {
+                    fmapIndex=fmapIndex>0?fmapIndex-1:(fMaps.size()-1);
+                    currentFudicials = readFMap(fMaps.get(fmapIndex));
+                    loadFiducial(currentFudicials.firstEntry().getValue());
+                }
+                break;
+            case TAG_ID:
+                if (gamepad1.dpadRightWasPressed() || gamepad2.dpadRightWasPressed())
+                    if (currentFudicials.higherEntry(tag_id)!=null) loadFiducial(currentFudicials.higherEntry(tag_id).getValue());
+                    else loadFiducial(currentFudicials.firstEntry().getValue());
+                if (gamepad1.dpadLeftWasPressed() || gamepad2.dpadLeftWasPressed())
+                    if (currentFudicials.lowerEntry(tag_id)!=null) loadFiducial(currentFudicials.lowerEntry(tag_id).getValue());
+                    else loadFiducial(currentFudicials.lastEntry().getValue());
+                break;
+            case ROBOT_LENGTH:
                 if (gamepad1.dpadRightWasPressed() || gamepad2.dpadRightWasPressed())
                     if(rear_to_front<24) rear_to_front+=.1;
                 if (gamepad1.dpadLeftWasPressed() || gamepad2.dpadLeftWasPressed())
                     if(rear_to_front>0) rear_to_front-=.1;
                 break;
-            case 1:
+            case ROBOT_WIDTH:
                 if (gamepad1.dpadRightWasPressed() || gamepad2.dpadRightWasPressed())
                     if(left_to_right<24) left_to_right+=.1;
                 if (gamepad1.dpadLeftWasPressed() || gamepad2.dpadLeftWasPressed())
                     if(left_to_right>0) left_to_right-=.1;
                 break;
-            case 2:
+            case TILE_X:
                 if (gamepad1.dpadRightWasPressed() || gamepad2.dpadRightWasPressed())
                     xtilecenter=xtilecenter<2?xtilecenter+1:-2;
                 if (gamepad1.dpadLeftWasPressed() || gamepad2.dpadLeftWasPressed())
                     xtilecenter=xtilecenter>-2?xtilecenter-1:2;
                 break;
-            case 3:
+            case TILE_Y:
                 if (gamepad1.dpadRightWasPressed() || gamepad2.dpadRightWasPressed())
                     ytilecenter=ytilecenter<2?ytilecenter+1:-2;
                 if (gamepad1.dpadLeftWasPressed() || gamepad2.dpadLeftWasPressed())
                     ytilecenter=ytilecenter>-2?ytilecenter-1:2;
                 break;
-            case 4:
+            case ROBOT_CORNER:
                 if (gamepad1.dpadRightWasPressed() || gamepad2.dpadRightWasPressed())
-                    wheel_id=wheel_id<3?wheel_id+1:0;
+                    heading_id = heading_id <3? heading_id +1:0;
                 if (gamepad1.dpadLeftWasPressed() || gamepad2.dpadLeftWasPressed())
-                    wheel_id=wheel_id>0?wheel_id-1:3;
+                    heading_id = heading_id >0? heading_id -1:3;
                 break;
-            case 5:
+            case ROBOT_HEADING:
                 if (gamepad1.dpadRightWasPressed() || gamepad2.dpadRightWasPressed())
                     facing_id=facing_id<3?facing_id+1:0;
                 if (gamepad1.dpadLeftWasPressed() || gamepad2.dpadLeftWasPressed())
