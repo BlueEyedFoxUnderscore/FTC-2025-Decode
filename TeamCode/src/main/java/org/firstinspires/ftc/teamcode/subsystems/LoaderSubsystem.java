@@ -82,10 +82,6 @@ public class LoaderSubsystem {
         /**
          *
          */
-        GATE_WAIT,
-        /**
-         *
-         */
         REGRESS_GATE_WAIT_STABLE, LAUNCH_NEXT, LAUNCH_WAIT_LONG, PRE_LAUNCH,
     }
     private final DcMotorEx transfer;
@@ -204,7 +200,6 @@ public class LoaderSubsystem {
                     state = LoaderState.READY;
                 }
                 break;
-
             case PRE_LAUNCH:
                 isFlywheelStableGate.update();
                 if (isFlywheelStableGate.trueForAtLeast(0.2)) state = LoaderState.LAUNCH;
@@ -226,7 +221,7 @@ public class LoaderSubsystem {
                     if (isFlywheelStableGate.trueForAtLeast(0.10)) state = LoaderState.LAUNCH_NEXT;
                     if (request != LoaderState.LAUNCH) {
                         gate.close();
-                        state = LoaderState.GATE_WAIT;
+                        state = LoaderState.READY;
                     }
                 }
                 break;
