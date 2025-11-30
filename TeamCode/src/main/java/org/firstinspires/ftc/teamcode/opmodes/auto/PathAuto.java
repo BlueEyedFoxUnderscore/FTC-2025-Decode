@@ -8,7 +8,6 @@ import com.bylazar.field.FieldManager;
 import com.bylazar.field.PanelsField;
 import com.bylazar.field.Style;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.PedroCoordinates;
 import com.pedropathing.geometry.Pose;
@@ -17,11 +16,11 @@ import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.PoseHistory;
 import com.qualcomm.ftccommon.SoundPlayer;
-import com.qualcomm.hardware.limelightvision.LLFieldMap;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -32,7 +31,6 @@ import org.firstinspires.ftc.teamcode.Gate;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 
 @Autonomous
@@ -45,8 +43,8 @@ public class PathAuto extends LinearOpMode {
     private boolean acceptedPose = false;
     private boolean wasCalled = false;
 
-    public  enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, GET_TAG_ID, GET_TAG_ID_2, GET_TAG_ID_3, SAMPLE_TAGS_4}
-    private enum BallState {PPG, PGP, GPP}
+    public  enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, GET_TAG_ID, GET_TAG_ID_2, CYCLING, CYCLING_2, CYCLING_3, CYCLING_READY, SAMPLE_TAGS_4}
+    public enum BallState {PPG, PGP, GPP}
 
     private AutoState state = AutoState.READY;
 
@@ -55,18 +53,20 @@ public class PathAuto extends LinearOpMode {
     }
 
     private Runnable runAtEnd = null, tempRun = null; // () -> {};
-    private BallState gamestate = null;
+    BallState gamestate = null;
     int tag;
     int ppg = 0;
     int pgp = 0;
     int gpp = 0;
+
+    private PathChain afterCycle = null;
 
 
     @Override
     public void runOpMode() throws InterruptedException {
         camera = hardwareMap.get(Limelight3A.class, "limelight");
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(121.7, 124.1, Math.toRadians(36))); //set your starting pose
+        // follower.setStartingPose(new Pose(121.7, 124.1, Math.toRadians(36))); //set your starting pose
         follower.activateAllPIDFs();
         camera.start();
         RobotContainer.init(hardwareMap, telemetry);
@@ -80,19 +80,21 @@ public class PathAuto extends LinearOpMode {
         }
         int mediumBeep = hardwareMap.appContext.getResources().getIdentifier("beep", "raw", hardwareMap.appContext.getPackageName());
 
+        RedAuto.init(follower, this);
+        setNextPath(RedAuto.READ_TO_REORIENT);
+        if(hardwareMap.get(VoltageSensor.class, "Control Hub").getVoltage() < 12.5) SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
         while (!isStarted() && !isStopRequested()) {
-            follower.update();
+            telemetry.addData("hearing", nextPath.firstPath().getHeadingGoal(0));
             try {
                 Drawing.drawRobot(follower.getPose());
                 Drawing.sendPacket();
             } catch (Exception e) {
                 throw new RuntimeException("Drawing failed " + e);
             }
+            telemetry.update();
         }
-
-        RedAuto.init(follower, this);
-
-        follower.followPath(RedAuto.LOOK_AT_THINGY);
+        follower.setStartingPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
+        startNextPath();
         //follower.followPath(RedAuto.APRIL_TEST);
 
         LinkedList<Pose> samples = new LinkedList<>();
@@ -108,6 +110,7 @@ public class PathAuto extends LinearOpMode {
                 tempRun = runAtEnd;
                 runAtEnd = null;
                 tempRun.run();
+                telemetry.addLine("Running runAtEnd");
             }
 
             ///  S t a t e m a c h i n e
@@ -184,6 +187,39 @@ public class PathAuto extends LinearOpMode {
                     state = AutoState.READY;
                     setFollowerMaxPower(1);
                     break;
+                case CYCLING_READY:
+                    if (!follower.isBusy()) {
+                        if (cycleCount > 1) {
+                            --cycleCount;
+                            state = AutoState.CYCLING;
+                        } else {
+                            nextPath = afterCycle;
+                            state = AutoState.READY;
+                            startNextPath();
+                        }
+                    }
+                    break;
+                case CYCLING:
+                    spinHalf();
+                    state = AutoState.CYCLING_2;
+                    RobotContainer.LOADER.launch();
+                    break;
+                case CYCLING_2:
+                    if (RobotContainer.LOADER.doneFiring()) {
+                        RobotContainer.LOADER.cancelLaunch();
+                        RobotContainer.LOADER.intake();
+                        spinDown();
+                        elapsedTime.reset();
+                        state = AutoState.CYCLING_3;
+                        nextPath = RedAuto.SORT_SCAN_FORWARDS;
+                    }
+                    break;
+                case CYCLING_3:
+                    if (elapsedTime.seconds() > 1) {
+                        state = AutoState.CYCLING_READY;
+                        startNextPath();
+                    }
+                    break;
                 default: int fucksUpTheProgram = 0 / 0;
             }
 
@@ -231,18 +267,56 @@ public class PathAuto extends LinearOpMode {
     }
 
     private PathChain nextPath;
-    private void startNextPath() {
+    void startNextPath() {
         if (nextPath != null) {
             follower.followPath(nextPath);
+            nextPath = null;
         }
     }
 
     void spinUp() {
-        RobotContainer.FLYWHEEL.setRequested(2600, 2400); //2800 was original
+        RobotContainer.FLYWHEEL.setRequested(2800, 2600); //2600 was original
     }
 
     void spinDown() {
         RobotContainer.FLYWHEEL.setRequested(0, 0);
+    }
+
+    void spinHalf() {
+        RobotContainer.FLYWHEEL.setRequested(900, 750);
+    }
+
+    int cycleCount = 1;
+
+    void cycle1() {
+        RobotContainer.LOADER.setLoaded(1);
+        RobotContainer.LOADER.resetShots();
+        RobotContainer.LOADER.launch();
+        cycleCount = 1;
+        afterCycle = nextPath;
+        state = AutoState.CYCLING;
+    }
+
+    void cycle2() {
+        RobotContainer.LOADER.setLoaded(1);
+        RobotContainer.LOADER.resetShots();
+        RobotContainer.LOADER.launch();
+        cycleCount = 2;
+        afterCycle = nextPath;
+        state = AutoState.CYCLING;
+    }
+
+    void sort() {
+        switch (gamestate) {
+            case PPG:
+                cycle1();
+                break;
+            case PGP:
+                cycle2();
+                break;
+            case GPP:
+                break;
+        }
     }
 
     void launchBalls2() {
@@ -371,6 +445,10 @@ public class PathAuto extends LinearOpMode {
         follower.setMaxPower(power);
     }
     //*/
+
+    void cancelIntake() {
+
+    }
 }
 
 

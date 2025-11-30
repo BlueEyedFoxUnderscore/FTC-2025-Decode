@@ -82,10 +82,11 @@ public class LoaderSubsystem {
         /**
          *
          */
-        REGRESS_GATE_WAIT_STABLE, LAUNCH_NEXT, LAUNCH_WAIT_LONG, PRE_LAUNCH,
+        REGRESS_GATE_WAIT_STABLE, LAUNCH_NEXT, LAUNCH_WAIT_LONG, PRE_LAUNCH, CYCLE,
     }
     private final DcMotorEx transfer;
     private final DcMotorEx intake;
+    private static final double cycleSpeed = 850;
     /**
      * Gate subsystem for this shooter
      */
@@ -174,7 +175,7 @@ public class LoaderSubsystem {
                 break;
             case WAIT_FOR_STOP_THEN_REGRESS_INTAKE:
                 if (elapsedTime.seconds() > .05) {
-                    intake.setTargetPosition(intake.getCurrentPosition() - (int)(145.0 * .25)); //0.25
+                    intake.setTargetPosition(intake.getCurrentPosition() - (int)(145.0 * .15)); //0.25
                     intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     intake.setPower(1);
                     elapsedTime.reset();
@@ -183,7 +184,7 @@ public class LoaderSubsystem {
                 break;
             case WAIT_THEN_REGRESS_TRANSFER:
                 if (elapsedTime.seconds() > .1) {
-                    transfer.setTargetPosition(transfer.getCurrentPosition() - (int)(537 * .25));
+                    transfer.setTargetPosition(transfer.getCurrentPosition() - (int)(537 * .20));
                     transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     transfer.setPower(1);
                     state = LoaderState.WAIT_REGRESS_THEN_OPEN_GATE;
@@ -217,7 +218,7 @@ public class LoaderSubsystem {
                 break;
             case LAUNCH_WAIT:
                 isFlywheelStableGate.update();
-                if (elapsedTime.seconds() > 0.10) { // 0.20
+                if (elapsedTime.seconds() > 0.50) { // 0.20
                     if (isFlywheelStableGate.trueForAtLeast(0.10)) state = LoaderState.LAUNCH_NEXT;
                     if (request != LoaderState.LAUNCH) {
                         gate.close();
@@ -266,7 +267,7 @@ public class LoaderSubsystem {
     }
 
     public boolean doneFiring() {
-        return shots > loaded;
+        return shots >= loaded;
     }
 
     public void resetShots() {

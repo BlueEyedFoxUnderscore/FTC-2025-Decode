@@ -29,6 +29,9 @@ public class FlywheelSubsystem {
         this.shooter2 = shooter2;
         this.telemetry = telemetry;
 
+        shooter1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooter2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         shooter1.setDirection(DcMotorSimple.Direction.REVERSE);
         shooter2.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -54,20 +57,27 @@ public class FlywheelSubsystem {
      * Updates the speed with respect to the current requested speed.
      */
     public void update() {
-        if (speed == 0) {
-            setPower(0);
-        } /*else if (getSpeed() < threshold) {
-            telemetry.addLine("Full power");
-            setPower(1);
-        }/**/ else {
-            //telemetry.addLine("Using PID");
-            if(isLoaderReadyToShootSupplier.getAsBoolean()) {
-                setVelocity(speed);
-            }
-            //telemetry.addData("Requested velocity", String.valueOf(requestedSpeed));
-            //telemetry.addData("Actual velocity", String.valueOf(getSpeed()));
+        if (isLoaderReadyToShootSupplier.getAsBoolean()) {
+            setVelocity(speed);
         }
     }
+
+//    public void update() {
+ //       if (speed == 0) {
+   //         setPower(0);
+        //} else if (getSpeed() < threshold) {
+         //   telemetry.addLine("Full power");
+         //   setPower(1);
+        //} else {
+            //telemetry.addLine("Using PID");
+     //       if(isLoaderReadyToShootSupplier.getAsBoolean()) {
+       //         setVelocity(speed);
+         //   }
+            //telemetry.addData("Requested velocity", String.valueOf(requestedSpeed));
+            //telemetry.addData("Actual velocity", String.valueOf(getSpeed()));
+       // }
+  //  }
+
 
 
     private static final double TPS_PER_RPM = 28. / 60.;
@@ -81,20 +91,6 @@ public class FlywheelSubsystem {
     public void setRequested(double speed, double threshold) {
         this.speed = speed;
         this.threshold = threshold;
-    }
-
-    /**
-     * Sets the threshold and the speed. <br/>
-     * The threshold is not relative to the speed. If the speed is above the threshold, it automatically switches to PID mode. Otherwise, it applies full power.<br/>
-     * This is the chained version of this method.
-     * @param speed Requested speed, in RPM.
-     * @param threshold Requested threshold, in RPM. This is not relative.
-     * @return This object (for chaining)
-     */
-    public FlywheelSubsystem setRequested_(double speed, double threshold) {
-        this.speed = speed;
-        this.threshold = threshold;
-        return this;
     }
 
     /**
