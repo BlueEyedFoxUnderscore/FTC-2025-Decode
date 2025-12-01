@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmodes.auto;
 
+import android.util.Log;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -234,107 +236,99 @@ public class RedAuto {
                     //.addParametricCallback(0.2, ()->auto.spinUp("CHECK_ORDER"))
                     .addParametricCallback(0.5, () -> auto.setRunAtEnd(() ->
                             {
+                                Log.i("20311", "Doing CHECK_ORDER with h"+auto.heldstate+" g"+auto.gamestate);
                                 switch (auto.heldstate) {
                                     case PGP:
                                         switch (auto.gamestate) {
                                             case PPG:
-                                                auto.heldstate = PathAuto.BallState.GP;
                                                 auto.launchBalls1();
                                                 auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from CHECK_ORDER hPGP, gPPG");
+                                                auto.heldstate = PathAuto.BallState.GP;
                                                 break;
                                             case PGP:
-                                                auto.heldstate = PathAuto.BallState.EMPTY;
+                                                auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from CHECK_ORDER hPGP, gPGP");
                                                 auto.launchBalls3();
+                                                auto.heldstate = PathAuto.BallState.EMPTY;
                                                 break;
                                             case GPP:
-                                                auto.heldstate = PathAuto.BallState.PGP;
-                                                auto.setNextPath(SHOOT_TO_SORT, "SHOOT_TO_SORT from CHECK_ORDER hPGP, gPGP");
-                                                auto.startNextPath();
-                                                auto.setRunAtEnd(auto::cycle1);
-                                                auto.setNextPath(SORT_TO_SHOOT, "SORT_TO_SHOOT from CHECK_ORDER hPGP, gPPG");
+                                                auto.setNextPath(SHOOT_TO_SORT, "SHOOT_TO_SORT from CHECK_ORDER hPGP, gGPP");
+                                                auto.startNextPath("from CHECK_ORDER hPGP, gPGP setRunAtEnd");
+                                                auto.setNextPath(SORT_TO_SHOOT, "SORT_TO_SHOOT from CHECK_ORDER hPGP, gGPP");
+                                                auto.heldstate = PathAuto.BallState.GPP;
                                                 break;
                                         }
                                         break;
                                     case GPP:
                                         switch (auto.gamestate) {
                                             case PPG:
-                                                auto.heldstate = PathAuto.BallState.GPP;
                                                 auto.setNextPath(SHOOT_TO_SORT, "SHOOT_TO_SORT from CHECK_ORDER hGPP, gPPG");
-                                                auto.startNextPath();
-                                                auto.setRunAtEnd(auto::cycle1);
+                                                auto.startNextPath("from CHECK_ORDER hGPP, gPPG setRunAtEnd");
                                                 auto.setNextPath(SORT_TO_SHOOT, "SORT_TO_SHOOT from CHECK_ORDER hGPP, gPPG");
+                                                auto.heldstate = PathAuto.BallState.PPG;
                                                 break;
                                             case PGP:
-                                                auto.telemetry.addData("Fuck", "Shit");
-                                                auto.telemetry.update();
-                                                int fucksUpTheProgram = 0 / 0;
-                                                // I messed up somehow
+                                                Log.i("20311", "ASSERTION ---- Shouldn't get to hGPP, gPGP");
                                                 break;
                                             case GPP:
-                                                auto.heldstate = PathAuto.BallState.EMPTY;
                                                 auto.launchBalls3();
+                                                auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from CHECK_ORDER hGPP, gGPP");
+                                                auto.heldstate = PathAuto.BallState.EMPTY;
                                                 break;
                                         }
                                         break;
                                     case PPG:
                                         switch (auto.gamestate) {
                                             case PPG:
-                                                auto.heldstate = PathAuto.BallState.EMPTY;
                                                 auto.launchBalls3();
+                                                //?
+                                                auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from CHECK_ORDER hPPG, gPPG");
+                                                auto.heldstate = PathAuto.BallState.EMPTY;
                                                 break;
                                             case PGP:
-                                                auto.heldstate = PathAuto.BallState.GPP;
-                                                auto.setNextPath(SHOOT_TO_SORT, "SHOOT_TO_SORT from CHECK_ORDER hPPG, gGPP");
-                                                auto.startNextPath();
-                                                auto.setRunAtEnd(auto::cycle1);
-                                                auto.setNextPath(SORT_TO_SHOOT, "SORT_TO_SHOOT from CHECK_ORDER hPPG, gGPP");
+                                                auto.setNextPath(SHOOT_TO_SORT, "SHOOT_TO_SORT from CHECK_ORDER hPPG, gPGP");
+                                                auto.startNextPath("from CHECK_ORDER hPPG, gPGP setRunAtEnd");
+                                                auto.setNextPath(SORT_TO_SHOOT, "SORT_TO_SHOOT from CHECK_ORDER hPPG, gPGP");
+                                                auto.heldstate = PathAuto.BallState.PGP;
                                                 break;
                                             case GPP:
-                                                auto.telemetry.addData("Fuck", "Shit");
-                                                auto.telemetry.update();
-                                                int fucksUpTheProgram = 0 / 0;
-                                                // I messed up somehow
+                                                Log.i("20311", "ASSERTION ---- Shouldn't get to hPPG, gGPP");
+                                                break;
                                         }
                                         break;
                                     case GP:
                                         switch (auto.gamestate) {
                                             case PPG:
-                                                auto.heldstate = PathAuto.BallState.PG;
                                                 auto.setNextPath(SHOOT_TO_SORT, "SHOOT_TO_SORT from CHECK_ORDER");
-                                                auto.startNextPath();
-                                                auto.setRunAtEnd(auto::cycle1);
+                                                auto.startNextPath("from CHECK_ORDER hGP, gPPG setRunAtEnd");
                                                 auto.setNextPath(SORT_TO_SHOOT, "SORT_TO_SHOOT from CHECK_ORDER");
+                                                auto.heldstate = PathAuto.BallState.PG;
                                                 break;
                                             case PGP:
-                                                auto.heldstate = PathAuto.BallState.EMPTY;
+                                                Log.i("20311", "executing auto.launchBalls2() from CHECK_ORDER hGP, gPGP after end");
                                                 auto.launchBalls2();
+                                                auto.setRunAtEnd(auto::launchBalls2,"auto::launchBalls2 from CHECK_ORDER hGP, gPGP");
+                                                auto.heldstate = PathAuto.BallState.EMPTY;
                                                 break;
                                             case GPP:
-                                                auto.telemetry.addData("Fuck", "Shit");
-                                                auto.telemetry.update();
-                                                int fucksUpTheProgram = 0 / 0;
-                                                // I messed up somehow
+                                                Log.i("20311", "ASSERTION ---- Shouldn't get to hGP, gGPP");
                                                 break;
                                         }
                                         break;
                                     case PG:
                                         switch (auto.gamestate) {
                                             case PPG:
+                                                Log.i("20311", "executing auto.launchBalls2() from CHECK_ORDER hPG, gPPG after end");
+                                                auto.launchBalls2();
                                                 auto.heldstate = PathAuto.BallState.EMPTY;
-                                                auto.setRunAtEnd(auto::launchBalls2);
                                                 break;
                                             case PGP:
-                                                auto.heldstate = PathAuto.BallState.GP;
                                                 auto.setNextPath(SHOOT_TO_SORT, "SHOOT_TO_SORT from CHECK_ORDER hPG, gPGP");
-                                                auto.startNextPath();
-                                                auto.setRunAtEnd(auto::cycle1);
+                                                auto.startNextPath("from CHECK_ORDER hPG, gPGP setRunAtEnd");
                                                 auto.setNextPath(SORT_TO_SHOOT, "SORT_TO_SHOOT from CHECK_ORDER hPG, gPGP");
+                                                auto.heldstate = PathAuto.BallState.GP;
                                                 break;
                                             case GPP:
-                                                auto.telemetry.addData("Fuck", "Shit");
-                                                auto.telemetry.update();
-                                                int fucksUpTheProgram = 0 / 0;
-                                                // I messed up somehow
+                                                Log.i("20311", "ASSERTION ---- Shouldn't get to hPG, gGPP");
                                                 break;
                                         }
                                         break;
@@ -343,70 +337,82 @@ public class RedAuto {
                                             case PPG:
                                                 switch (lastGroup.get()) {
                                                     case 0:
-                                                        auto.heldstate = PathAuto.BallState.PPG;
                                                         lastGroup.set(3);
                                                         auto.setNextPath(COLLECT_GROUP_3, "COLLECT_GROUP_3 from CHECK_ORDER hEMPTY, gPPG, 0");
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPPG, 0");
+                                                        auto.heldstate = PathAuto.BallState.PPG;
                                                         break;
                                                     case 3:
-                                                        auto.heldstate = PathAuto.BallState.GPP;
                                                         lastGroup.set(1);
                                                         auto.setNextPath(COLLECT_GROUP_1, "COLLECT_GROUP_1 from CHECK_ORDER hEMPTY, gPPG, 3");
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPPG, 3");
+                                                        auto.heldstate = PathAuto.BallState.GPP;
                                                         break;
                                                     case 1:
                                                         // Lie about ball order so that we don't have to sort
-                                                        auto.heldstate = auto.gamestate;
                                                         lastGroup.set(2);
                                                         auto.setNextPath(COLLECT_GROUP_2, "COLLECT_GROUP_2 from CHECK_ORDER hEMPTY, gPPG, 1");
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPPG, 1");
+                                                        auto.heldstate = auto.gamestate;
                                                         break;
                                                     case 2:
                                                         auto.setNextPath(GO_TO_SQUARE, "GO_TO_SQUARE from CHECK_ORDER hEMPTY, gPPG, 2");
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPPG, 2");
                                                         break;
                                                 }
                                                 break;
                                             case PGP:
                                                 switch (lastGroup.get()) {
                                                     case 0:
-                                                        auto.heldstate = PathAuto.BallState.PGP;
                                                         lastGroup.set(2);
                                                         auto.setNextPath(COLLECT_GROUP_2, "COLLECT_GROUP_2 from CHECK_ORDER hEMPTY, gPGP, 0");
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPGP, 0");
+                                                        auto.heldstate = PathAuto.BallState.PGP;
                                                         break;
                                                     case 2:
-                                                        auto.heldstate = PathAuto.BallState.PPG;
                                                         lastGroup.set(3);
                                                         auto.setNextPath(COLLECT_GROUP_3, "COLLECT_GROUP_3 from CHECK_ORDER hEMPTY, gPGP, 2");
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPGP, 2");
+                                                        auto.heldstate = PathAuto.BallState.PPG;
                                                         break;
                                                     case 3:
-                                                        // Lie about ball order so that we don't have to sort
-                                                        auto.heldstate = auto.gamestate;
                                                         lastGroup.set(1);
                                                         auto.setNextPath(COLLECT_GROUP_1, "COLLECT_GROUP_1 from CHECK_ORDER hEMPTY, gPGP, 3");
+                                                        // Lie about ball order so that we don't have to sort
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPGP, 3");
+                                                        auto.heldstate = auto.gamestate;
                                                         break;
                                                     case 1:
                                                         auto.setNextPath(GO_TO_SQUARE, "GO_TO_SQUARE from CHECK_ORDER hEMPTY, gPGP, 1");
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPGP, 1");
                                                         break;
                                                 }
                                                 break;
                                             case GPP:
                                                 switch (lastGroup.get()) {
                                                     case 0:
-                                                        auto.heldstate = PathAuto.BallState.GPP;
                                                         lastGroup.set(1);
                                                         auto.setNextPath(COLLECT_GROUP_1, "COLLECT_GROUP_1 from CHECK_ORDER hEMPTY, gGPP, 0");
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPP, 0");
+                                                        auto.heldstate = PathAuto.BallState.GPP;
                                                         break;
                                                     case 1:
-                                                        auto.heldstate = PathAuto.BallState.PGP;
                                                         lastGroup.set(2);
                                                         auto.setNextPath(COLLECT_GROUP_2, "COLLECT_GROUP_2 from CHECK_ORDER hEMPTY, gGPP, 1");
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPP, 1");
+                                                        auto.heldstate = PathAuto.BallState.PGP;
                                                         break;
                                                     case 2:
-                                                        // Lie about ball order so that we don't have to sort
-                                                        auto.heldstate = auto.gamestate;
                                                         lastGroup.set(3);
                                                         auto.setNextPath(COLLECT_GROUP_3, "COLLECT_GROUP_3 from CHECK_ORDER hEMPTY, gGPP, 2");
+                                                        // Lie about ball order so that we don't have to sort
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPP, 2");
+                                                        auto.heldstate = auto.gamestate;
                                                         break;
                                                     case 3:
                                                         auto.setNextPath(GO_TO_SQUARE, "GO_TO_SQUARE from CHECK_ORDER hEMPTY, gGPP, 3");
-                                                    break;
+                                                        auto.startNextPath("from CHECK_ORDER hEMPTY, gPP, 3");
+                                                        break;
                                                 }
                                             break;
                                         }
@@ -416,17 +422,6 @@ public class RedAuto {
                             , "complex behavior from CHECK_ORDER"))
                 .build();
 
-        SHOOT_TO_SORT = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(100.783, 109.393), new Pose(123.236, 118.145))
-                )
-                    .setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(20))
-                    .addParametricCallback(0.0, () -> auto.spinHalf("SHOOT_TO_SORT slow spin for sorting"))
-                    .addParametricCallback(0.2, () -> auto.setNextPath(SORT_TO_SHOOT, "SHOOT_TO_SORT from SHOOT_TO_SORT")) // set this to what hapens after cycling
-                    .addParametricCallback(0.5, () -> auto.setRunAtEnd(auto::sort, "auto::sort from SHOOT_TO_SORT")) // rename this cyclen, have cyclen remember next path and change it to sort_scan_forwards there instead if you want to cycle, or restore and call next path if done.
-                .build();
-
         SORT_SCAN_FORWARDS = follower
                 .pathBuilder()
                 .addPath(
@@ -434,7 +429,7 @@ public class RedAuto {
                 )
                     .setConstantHeadingInterpolation(Math.toRadians(20))
                     .addParametricCallback(0.5, () -> auto.setNextPath(SORT_SCAN_BACKWARDS, "SORT_SCAN_BACKWARDS from SORT_SCAN_FORWARDS"))
-                    .addParametricCallback(0.5, () -> auto.setRunAtEnd(auto::startNextPath, "auto::startNextPath from SORT_SCAN_FORWARDS"))
+                    .addParametricCallback(0.5, () -> auto.setRunAtEnd(()->auto.startNextPath("from SORT_SCAN_BACKWARDS setRunAtEnd"), "auto::startNextPath from SORT_SCAN_FORWARDS"))
                 .build();
 
         SORT_SCAN_BACKWARDS = follower
@@ -452,8 +447,21 @@ public class RedAuto {
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(20), Math.toRadians(45))
                     .addParametricCallback(0.1, () -> auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from SORT_TO_SHOOT"))
-                    .addParametricCallback(0.2, () -> auto.setRunAtEnd(auto::startNextPath, "auto::startNextPath from SORT_TO_SHOOT"))
+                    .addParametricCallback(0.2, () -> auto.setRunAtEnd(()->auto.startNextPath("from SORT_TO_SHOOT setRunAtEnd"), "auto::startNextPath from SORT_TO_SHOOT"))
+                    .addParametricCallback(0.9, () -> auto.spinUp("SORT_TO_SHOOT Get ready to shoot"))
                 .build();
+
+        SHOOT_TO_SORT = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(new Pose(100.783, 109.393), new Pose(123.236, 118.145))
+                )
+                    .setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(20))
+                    .addParametricCallback(0.0, () -> auto.spinHalf("SHOOT_TO_SORT slow spin for sorting"))
+                    .addParametricCallback(0.2, () -> auto.setNextPath(SORT_TO_SHOOT, "SHOOT_TO_SORT from SHOOT_TO_SORT")) // set this to what hapens after cycling
+                    .addParametricCallback(0.5, () -> auto.setRunAtEnd(auto::cycle1, "auto::sort from SHOOT_TO_SORT")) // rename this cyclen, have cyclen remember next path and change it to sort_scan_forwards there instead if you want to cycle, or restore and call next path if done.
+                .build();
+
     }
 
     static Runnable andThen(Runnable ...runnables) {

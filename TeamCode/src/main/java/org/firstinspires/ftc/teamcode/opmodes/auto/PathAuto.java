@@ -56,10 +56,7 @@ public class PathAuto extends LinearOpMode {
     public enum BallState {PPG, PGP, GP, PG, EMPTY, GPP}
 
     private AutoState state = AutoState.READY;
-
-    public void setRunAtEnd(Runnable runAtEnd) {
-        setRunAtEnd(runAtEnd, "None given");
-    }
+    private AutoState laststate = null;
 
     String runAtEndName=null;
     public void setRunAtEnd(Runnable runAtEnd, String name) {
@@ -136,6 +133,10 @@ public class PathAuto extends LinearOpMode {
             }
 
             ///  S t a t e m a c h i n e
+            if(laststate != state) {
+                laststate=state;
+                Log.i("20311", "AUTOSTATE CHANGED TO: "+state);
+            }
             switch (state) {
                 case READY:
                     break;
@@ -283,11 +284,6 @@ public class PathAuto extends LinearOpMode {
         this.state = state;
     }
 
-    public void setNextPath(PathChain nextPath) {
-        setNextPath(nextPath, "None given");
-    }
-
-
     public void setNextPath(PathChain nextPath, String name) {
         this.nextPath = nextPath;
         Log.i("20311", "next path: " + name);
@@ -306,11 +302,11 @@ public class PathAuto extends LinearOpMode {
             follower.followPath(nextPath);
             nextPath = null;
         }
+        else Log.i("20311", "NO NEXT PATHCHAIN after startNextPath("+note+")");
     }
-    void startNextPath() {startNextPath("None given.");}
 
     void spinUp(String note) {
-        RobotContainer.FLYWHEEL.setRequested(2800, 2600, note); //2600 was original
+        RobotContainer.FLYWHEEL.setRequested(2750, 2500, note); //2600 was original //2800 too fast //2700 too slow
     }
 
     void spinDown(String note) {
@@ -341,19 +337,6 @@ public class PathAuto extends LinearOpMode {
         state = AutoState.CYCLING;
     }
 
-    void sort() {
-        switch (gamestate) {
-            case PPG:
-                cycle1();
-                break;
-            case PGP:
-                cycle2();
-                break;
-            case GPP:
-                break;
-        }
-    }
-
     void launchBalls2() {
         RobotContainer.LOADER.setLoaded(2);
         RobotContainer.LOADER.resetShots();
@@ -366,6 +349,7 @@ public class PathAuto extends LinearOpMode {
         RobotContainer.LOADER.resetShots();
         RobotContainer.LOADER.launch();
         state = AutoState.SHOOTING;
+        Log.i("20311", "EXECUTING auto::launchBalls3");
     }
 
     void reorient() {
