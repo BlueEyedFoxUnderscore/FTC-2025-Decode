@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -88,10 +90,14 @@ public class FlywheelSubsystem {
      * @param speed Requested speed, in RPM.
      * @param threshold Requested threshold, in RPM. This is not relative.
      */
-    public void setRequested(double speed, double threshold) {
+
+    public void setRequested(double speed, double threshold, String name) {
         this.speed = speed;
         this.threshold = threshold;
+        Log.i("20311", "FLYWHEEL REQUEST speed " + speed + ":"+threshold +" from "+ name);
     }
+
+
 
     /**
      * Sets the target velocity of both motors.

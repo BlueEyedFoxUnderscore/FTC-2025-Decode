@@ -154,12 +154,12 @@ public class MainControl extends OpMode {
         RobotContainer.LOADER.launch();
     }
 
-    private void spinUp() {
-        RobotContainer.FLYWHEEL.setRequested(flywheelSpeed, flywheelSpeed * 12.0/14.0); // 2800 2400
+    private void spinUp(String note) {
+        RobotContainer.FLYWHEEL.setRequested(flywheelSpeed, flywheelSpeed * 12.0/14.0, note); // 2800 2400
     }
 
-    private void spinDown() {
-        RobotContainer.FLYWHEEL.setRequested(0, 0);
+    private void spinDown(String note) {
+        RobotContainer.FLYWHEEL.setRequested(0, 0, note);
     }
 
     private void cancelLaunch() {
@@ -173,11 +173,12 @@ public class MainControl extends OpMode {
     private void updateLoader() {
         if (gamepad1.right_bumper) intake();
         else cancelIntake();
-        if (gamepad1.left_bumper) {
-            spinUp();
-            if (flywheelStable()) launch();
-        } else {
-            spinDown();
+        if (gamepad1.leftBumperWasPressed()) {
+            spinUp("Left bumper pressed");
+            launch();
+        }
+        if (gamepad1.leftBumperWasReleased()) {
+            spinDown("Left bumper released");
             cancelLaunch();
         }
     }
