@@ -31,19 +31,23 @@ public class FlywheelSubsystem {
         this.shooter2 = shooter2;
         this.telemetry = telemetry;
 
+
+        final double fCoeff = 14.9244385071; // 16.072472238457042;
         shooter1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
         shooter1.setDirection(DcMotorSimple.Direction.REVERSE);
         shooter2.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        final double fCoeff = 1.0 / 28.0 * 6000.0 / 60.0 * 2.0 * 2800. / 1180. * 2750. / 2900.;
-        shooter1.setVelocityPIDFCoefficients(100, 0, 0, fCoeff);
-        shooter2.setVelocityPIDFCoefficients(100, 0, 0, fCoeff);
+        shooter1.setVelocityPIDFCoefficients(65, 0, 0, fCoeff);
+        shooter2.setVelocityPIDFCoefficients(65, 0, 0, fCoeff);
         shooter1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
-
+    public void testp(double p)
+    {
+        final double fCoeff = 14.9244385071; // 16.072472238457042;
+        shooter1.setVelocityPIDFCoefficients(p, 0, 0, fCoeff);
+        shooter2.setVelocityPIDFCoefficients(p, 0, 0, fCoeff);
+    }
     public void setReady(BooleanSupplier ready) {
         isLoaderReadyToShootSupplier = ready;
     }
@@ -67,10 +71,7 @@ public class FlywheelSubsystem {
 //    public void update() {
  //       if (speed == 0) {
    //         setPower(0);
-        //} else if (getSpeed() < threshold) {
-         //   telemetry.addLine("Full power");
-         //   setPower(1);
-        //} else {
+        //} else
             //telemetry.addLine("Using PID");
      //       if(isLoaderReadyToShootSupplier.getAsBoolean()) {
        //         setVelocity(speed);
@@ -105,44 +106,20 @@ public class FlywheelSubsystem {
      * @param rpm The requested velocity, in RPM
      */
     private void setVelocity(double rpm) {
-        setRunMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //setRunMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter1.setVelocity(toTPS(rpm));
         shooter2.setVelocity(toTPS(rpm));
     }
 
-    /**
-     * Sets the target velocity of both motors.
-     * Also sets the run mode to DcMotor.RunMode.RUN_USING_ENCODER to be safe.<br/>
-     * This is the chained version of this method.
-     * @param rpm The requested velocity, in RPM
-     * @return This object (for chaining)
-     */
-    private FlywheelSubsystem setVelocity_(double rpm) {
-        setRunMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        shooter1.setVelocity(toTPS(rpm));
-        shooter2.setVelocity(toTPS(rpm));
-        return this;
-    }
 
     /**
      * Sets the run mode (DcMotor.RunMode) of both motors.
      * @param runMode The desired run mode.
      */
     private void setRunMode(DcMotor.RunMode runMode){
+        Log.i("20311", "shooter run mode set");
         shooter1.setMode(runMode);
         shooter2.setMode(runMode);
-    }
-
-    /**
-     * Sets the run mode (DcMotor.RunMode) of both motors.
-     * This is the chained version of this method.<br/>
-     * @param runMode The desired run mode.
-     * @return This object (for chaining)
-     */
-    private FlywheelSubsystem setRunMode_(DcMotor.RunMode runMode){
-        shooter1.setMode(runMode);
-        shooter2.setMode(runMode);
-        return this;
     }
 
     /**
@@ -157,39 +134,25 @@ public class FlywheelSubsystem {
     }
 
     /**
-     * Sets the power applied to both motors.
-     * Also sets the run mode of both motors to DcMotor.RunMode.RUN_WITHOUT_ENCODER to be safe.<br/>
-     * This is the chained version of this method.
-     *
-     * @param power The requested power.
-     * @return This object (for chaining).
-     */
-    private FlywheelSubsystem setPower_(double power) {
-        setRunMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        shooter1.setPower(power);
-        shooter2.setPower(power);
-        return this;
-    }
-
-
-
-    /**
      * Gets the effective speed of both motors, in RPM.
      * @return The (effective) speed of the faster motor.
      */
-    public double getSpeed() {
-        return toRPM(Math.max(shooter1.getVelocity(), shooter2.getVelocity()));
+    public double getSpeed1() {
+        return toRPM(shooter1.getVelocity());
     }
 
+    public double getSpeed2() {
+        return toRPM(shooter2.getVelocity());
+    }
 
-    private int stabilityThreshold = 60; // previously 5
+    private int stabilityThreshold = 60;
 
     /**
      * Function to return whether the motor has stabilized (reached the target velocity)
      * @return Whether the difference between our requested and actual speeds is less than the stability threshold
      */
     public boolean isStable() {
-        return Math.abs(speed  - getSpeed()) < stabilityThreshold;
+        return Math.abs(speed  - getSpeed1()) < stabilityThreshold;
     }
 
 

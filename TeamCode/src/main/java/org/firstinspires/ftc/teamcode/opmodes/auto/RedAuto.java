@@ -114,7 +114,8 @@ public class RedAuto {
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                     .addParametricCallback(.01, () -> auto.setNextPath(afterCollectGroup1.get(), "afterCollectGroup1.get() from COLLECT_GROUP_1"))
-                    .addParametricCallback(.95, ()->auto.spinUp("COLLECT_GROUP_1"))
+                    .addParametricCallback(.02, () -> auto.setRunAtEnd(() -> auto.startNextPath("at end of COLLECT_GROUP_1"), "auto::startNextPath from COLLECT_GROUP_1"))
+                    .addParametricCallback(.95, () -> auto.spinUp("COLLECT_GROUP_1"))
                 //    .addParametricCallback(.99, auto::launchBalls3)
                 .build();
 
@@ -149,6 +150,7 @@ public class RedAuto {
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                     .addParametricCallback(.01, () -> auto.setNextPath(afterCollectGroup2.get(), "afterCollectGroup2.get() from COLLECT_GROUP_1"))
+                    .addParametricCallback(.02, () -> auto.setRunAtEnd(() -> auto.startNextPath("at end of COLLECT_GROUP_2"), "auto::startNextPath from COLLECT_GROUP_2"))
                     .addParametricCallback(.95, ()->auto.spinUp("COLLECT_GROUP_2"))
                 //    .addParametricCallback(.99, auto::launchBalls3)
                 .build();
@@ -175,6 +177,7 @@ public class RedAuto {
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                     .addParametricCallback(.01, () -> auto.setNextPath(afterCollectGroup3.get(), "afterCollectGroup3.get() from COLLECT_GROUP_1"))
+                    .addParametricCallback(.02, () -> auto.setRunAtEnd(() -> auto.startNextPath("at end of COLLECT_GROUP_3"), "auto::startNextPath from COLLECT_GROUP_3"))
                     .addParametricCallback(.95, ()->auto.spinUp("COLLECT_GROUP_3"))
                 //    .addParametricCallback(.99, auto::launchBalls3)
                 .build();

@@ -2,10 +2,10 @@ package org.firstinspires.ftc.teamcode.opmodes.teleop;
 
 import static java.lang.StrictMath.PI;
 
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.bylazar.field.FieldManager;
 import com.bylazar.field.PanelsField;
 import com.bylazar.field.Style;
-import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -20,10 +20,13 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
+import com.acmerobotics.dashboard.FtcDashboard;
+
 
 @TeleOp//(name = "***FTC OpMode 2", group = "TeleOp")
 
 public class MainControl extends OpMode {
+    FtcDashboard dash;
     ElapsedTime imuTimeout = new ElapsedTime();
     private Follower follower;
     static TelemetryManager telemetryM;
@@ -47,6 +50,8 @@ public class MainControl extends OpMode {
 
     @Override
     public void init() {
+        dash = FtcDashboard.getInstance();
+
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose());
 
@@ -68,13 +73,25 @@ public class MainControl extends OpMode {
     }
 
     private double flywheelSpeed = 2600;
+    TelemetryPacket packet;
     double offset = 0;
+
+    double testp =80;
+
+    ElapsedTime looptime = new ElapsedTime();
     @Override
     public void loop() {
+
+        packet = new TelemetryPacket();
         updateDrive();
         telemetry.addData("Requested Speed", flywheelSpeed);
-        telemetry.addData("Flywheel Speed", RobotContainer.FLYWHEEL);
-
+        telemetry.addData("Flywheel Speed 1", RobotContainer.FLYWHEEL.getSpeed1());
+        telemetry.addData("Flywheel stable", flywheelStable());
+        packet.put("Flywheel Speed 1", RobotContainer.FLYWHEEL.getSpeed1());
+        packet.put("Flywheel Speed 2", RobotContainer.FLYWHEEL.getSpeed2());
+        packet.put("flywheel PID P", testp);
+        packet.put("loop time", looptime.milliseconds());
+        looptime.reset();
         Drawing.drawDebug(follower);
         // Drawing.sendPacket();
         if (gamepad1.y) {
@@ -100,36 +117,34 @@ public class MainControl extends OpMode {
 
         telemetry.addLine(String.valueOf(gamepad1.right_trigger));
         telemetry.update();
-        telemetry.addLine(String.valueOf(RobotContainer.FLYWHEEL.getSpeed()));
+        telemetry.addLine(String.valueOf(RobotContainer.FLYWHEEL.getSpeed1()));
         telemetry.clear();
 
 
         if (gamepad1.dpad_right) {
             if (canright) {
                 canright=false;
-                flywheelSpeed += 02.5;}
+                flywheelSpeed += 100;}
         } else canright = true;
         if (gamepad1.dpad_left) {
             if (canleft) {
                 canleft = false;
-                flywheelSpeed -= 02.5;
+                flywheelSpeed -= 100;
             }
         } else canleft = true;
-        if (gamepad1.dpad_up) {
-            if (canup) {
-                canup = false;
-                flywheelSpeed += 120.;
-            }
-        } else canup = true;
-        if (gamepad1.dpad_down) {
-            if (candown) {
-                candown = false;
-                flywheelSpeed -= 120.;
-            }
-        } else candown = true;
+        if (gamepad1.dpadUpWasPressed()) {
+            testp += 5.;
+            RobotContainer.FLYWHEEL.testp(testp);
+            RobotContainer.FLYWHEEL.testp(testp);
+        }
+        if (gamepad1.dpadDownWasPressed()) {
+            testp -= 5.;
+            RobotContainer.FLYWHEEL.testp(testp);
+            RobotContainer.FLYWHEEL.testp(testp);
+        }
 
 
-
+        dash.sendTelemetryPacket(packet);
 //        gate.setPosition(gamepad1.right_trigger);
     }
 

@@ -1,14 +1,5 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.bylazar.field.FieldManager;
-import com.bylazar.field.PanelsField;
-import com.bylazar.field.Style;
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.math.Vector;
-import com.pedropathing.paths.Path;
-import com.pedropathing.paths.PathChain;
-import com.pedropathing.util.PoseHistory;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -33,7 +24,7 @@ public class RobotContainer {
         FLYWHEEL = new FlywheelSubsystem(shooter1, shooter2, telemetry);
         GATE = new GateSubsystem(gate);
         LOADER = new LoaderSubsystem(transfer, GATE, intake, telemetry, FLYWHEEL);
-        FLYWHEEL.setReady(LOADER::isReady);
+        FLYWHEEL.setReady(LOADER::mayChangeSpeeds);
         initialized = true;
     }
 

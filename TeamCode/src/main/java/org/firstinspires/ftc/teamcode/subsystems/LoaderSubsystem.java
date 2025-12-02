@@ -30,8 +30,12 @@ public class LoaderSubsystem {
         if (request == LoaderState.INTAKE) request = LoaderState.READY;
     }
 
-    public boolean isReady() {
-        return this.state == LoaderState.READY;
+    public boolean mayChangeSpeeds() {
+        return (
+                this.state != LoaderState.LAUNCH_WAIT
+                        && this.state != LoaderState.LAUNCH_WAIT_LONG
+                        && this.state != LoaderState.LAUNCH
+                        && this.state != LoaderState.LAUNCH_NEXT);
     }
 
     private enum LoaderState {
@@ -82,7 +86,7 @@ public class LoaderSubsystem {
         /**
          *
          */
-        REGRESS_GATE_WAIT_STABLE, LAUNCH_NEXT, LAUNCH_WAIT_LONG, PRE_LAUNCH, CYCLE,
+        REGRESS_GATE_WAIT_STABLE, LAUNCH_NEXT, LAUNCH_WAIT_LONG, PRE_LAUNCH, CYCLE, PRE_LAUNCH_WAIT,
     }
     private final DcMotorEx transfer;
     private final DcMotorEx intake;
@@ -161,8 +165,8 @@ public class LoaderSubsystem {
                     resetShots();
                     intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    intake.setPower(0.6);
-                    transfer.setPower(0.6);
+                    intake.setPower(0.8);
+                    transfer.setPower(0.3);
                 }
                 break;
             case INTAKE:
@@ -202,15 +206,20 @@ public class LoaderSubsystem {
                 }
                 break;
             case PRE_LAUNCH:
+                state=LoaderState.PRE_LAUNCH_WAIT;
+                // Only so we can spin up the flywheel is this state needed
+            case PRE_LAUNCH_WAIT:
                 isFlywheelStableGate.update();
-                if (isFlywheelStableGate.trueForAtLeast(0.2)) state = LoaderState.LAUNCH;
+                if (isFlywheelStableGate.trueForAtLeast(0.12)) state = LoaderState.LAUNCH;
                 if (request != LoaderState.LAUNCH) state = LoaderState.READY;
                 break;
             case LAUNCH:
-                //intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                transfer.setTargetPosition(transfer.getCurrentPosition() + 537 / 1);
+                transfer.setTargetPosition(transfer.getCurrentPosition() + (int)(537 * 1.1));
                 transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                intake.setTargetPosition(intake.getCurrentPosition() + (int)(145 * 1.1));
+                intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 transfer.setPower(1);
+                intake.setPower(1);
                 elapsedTime.reset();
                 state = LoaderState.LAUNCH_WAIT;
                 isFlywheelStableGate.reset();
@@ -218,21 +227,18 @@ public class LoaderSubsystem {
                 break;
             case LAUNCH_WAIT:
                 isFlywheelStableGate.update();
-                if (elapsedTime.seconds() > 0.50) { // 0.20
-                    if (isFlywheelStableGate.trueForAtLeast(0.10)) state = LoaderState.LAUNCH_NEXT;
+                if (elapsedTime.seconds() > 0.30) { // 0.20
+                    if (isFlywheelStableGate.trueForAtLeast(0.2)) state = LoaderState.LAUNCH_NEXT;
                     if (request != LoaderState.LAUNCH) {
-                        gate.close();
                         state = LoaderState.READY;
                     }
                 }
                 break;
             case LAUNCH_NEXT:
-                transfer.setTargetPosition(transfer.getCurrentPosition() + of(537 * 1.5));
+                transfer.setTargetPosition(transfer.getCurrentPosition() + (int)(537 * 1.1));
                 transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                intake.setTargetPosition(intake.getCurrentPosition() + of(145 * 2));
+                intake.setTargetPosition(intake.getCurrentPosition() + (int)(145 * 1.1));
                 intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                transfer.setPower(1);
-                intake.setPower(1);
                 elapsedTime.reset();
                 isFlywheelStableGate.reset();
                 shots += 1;
@@ -241,7 +247,7 @@ public class LoaderSubsystem {
             case LAUNCH_WAIT_LONG:
                 isFlywheelStableGate.update();
                 if (elapsedTime.seconds() > 0.30) {
-                    if (isFlywheelStableGate.trueForAtLeast(0.20)) { // 0.40
+                    if (isFlywheelStableGate.trueForAtLeast(0.2)) { // 0.40
                         state = LoaderState.LAUNCH_NEXT;
                     }
                     if (request != LoaderState.LAUNCH) {
