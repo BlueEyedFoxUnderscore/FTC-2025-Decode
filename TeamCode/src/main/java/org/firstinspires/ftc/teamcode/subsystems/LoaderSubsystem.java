@@ -1,8 +1,12 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.MotorControlAlgorithm;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -33,9 +37,14 @@ public class LoaderSubsystem {
     public boolean mayChangeSpeeds() {
         return (
                 this.state != LoaderState.LAUNCH_WAIT
-                        && this.state != LoaderState.LAUNCH_WAIT_LONG
-                        && this.state != LoaderState.LAUNCH
-                        && this.state != LoaderState.LAUNCH_NEXT);
+            && this.state != LoaderState.LAUNCH_WAIT_LONG
+            && this.state != LoaderState.LAUNCH
+            && this.state != LoaderState.LAUNCH_NEXT
+            && this.state != LoaderState.INTAKE
+            && this.state != LoaderState.WAIT_FOR_STOP_THEN_REGRESS_INTAKE
+            && this.state != LoaderState.WAIT_THEN_REGRESS_TRANSFER
+            && this.state != LoaderState.WAIT_REGRESS_THEN_OPEN_GATE
+            && this.state != LoaderState.REGRESS_GATE_WAIT_STABLE);
     }
 
     private enum LoaderState {
@@ -114,6 +123,19 @@ public class LoaderSubsystem {
         this.gate = gate;
         this.intake = intake;
         this.telemetry = telemetry;
+        //transfer.setPositionPIDFCoefficients(kPx);
+
+        Log.i("20311", "Transfer velocity pid: "+transfer.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER).toString());
+        Log.i("20311", "Transfer position pid: "+transfer.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION).toString());
+        Log.i("20311", "Intake velocity pid: "+intake.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER).toString());
+        Log.i("20311", "Intake position pid: "+intake.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION).toString());
+
+        transfer.setVelocityPIDFCoefficients(0, 0, 0, 20);
+        transfer.setPositionPIDFCoefficients(10);
+        intake.setVelocityPIDFCoefficients(0, 0, 0, 30);
+        intake.setPositionPIDFCoefficients(10);
+
+        intake.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, new PIDFCoefficients(10, 0, 0, 0, MotorControlAlgorithm.PIDF));
         transfer.setDirection(DcMotorSimple.Direction.REVERSE);
         setGateOpen(true);
         this.isFlywheelStableGate = new Gate(flywheel::isStable);
@@ -165,7 +187,7 @@ public class LoaderSubsystem {
                     resetShots();
                     intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    intake.setPower(0.8);
+                    intake.setPower(0.6);
                     transfer.setPower(0.3);
                 }
                 break;
@@ -210,13 +232,13 @@ public class LoaderSubsystem {
                 // Only so we can spin up the flywheel is this state needed
             case PRE_LAUNCH_WAIT:
                 isFlywheelStableGate.update();
-                if (isFlywheelStableGate.trueForAtLeast(0.12)) state = LoaderState.LAUNCH;
+                if (isFlywheelStableGate.trueForAtLeast(0.25)) state = LoaderState.LAUNCH;
                 if (request != LoaderState.LAUNCH) state = LoaderState.READY;
                 break;
             case LAUNCH:
-                transfer.setTargetPosition(transfer.getCurrentPosition() + (int)(537 * 1.1));
+                transfer.setTargetPosition(transfer.getCurrentPosition() + (int)(537 * 0.8));
                 transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                intake.setTargetPosition(intake.getCurrentPosition() + (int)(145 * 1.1));
+                intake.setTargetPosition(intake.getCurrentPosition() + (int)(145 * 0.8));
                 intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 transfer.setPower(1);
                 intake.setPower(1);
@@ -224,29 +246,31 @@ public class LoaderSubsystem {
                 state = LoaderState.LAUNCH_WAIT;
                 isFlywheelStableGate.reset();
                 shots += 1;
+                Log.i("20311", "Shots = "+shots);
                 break;
             case LAUNCH_WAIT:
                 isFlywheelStableGate.update();
-                if (elapsedTime.seconds() > 0.30) { // 0.20
-                    if (isFlywheelStableGate.trueForAtLeast(0.2)) state = LoaderState.LAUNCH_NEXT;
+                if (elapsedTime.seconds() > 0.7) { // 0.20
+                    if (isFlywheelStableGate.trueForAtLeast(0.25)) state = LoaderState.LAUNCH_NEXT;
                     if (request != LoaderState.LAUNCH) {
                         state = LoaderState.READY;
                     }
                 }
                 break;
             case LAUNCH_NEXT:
-                transfer.setTargetPosition(transfer.getCurrentPosition() + (int)(537 * 1.1));
+                transfer.setTargetPosition(transfer.getCurrentPosition() + (int)(537 * 1.0));
                 transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                intake.setTargetPosition(intake.getCurrentPosition() + (int)(145 * 1.1));
+                intake.setTargetPosition(intake.getCurrentPosition() + (int)(145 * 1.0));
                 intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 elapsedTime.reset();
                 isFlywheelStableGate.reset();
                 shots += 1;
+                Log.i("20311", "Shots = "+shots);
                 state = LoaderState.LAUNCH_WAIT_LONG;
                 break;
             case LAUNCH_WAIT_LONG:
                 isFlywheelStableGate.update();
-                if (elapsedTime.seconds() > 0.30) {
+                if (elapsedTime.seconds() > 0.70) {
                     if (isFlywheelStableGate.trueForAtLeast(0.2)) { // 0.40
                         state = LoaderState.LAUNCH_NEXT;
                     }
@@ -270,6 +294,7 @@ public class LoaderSubsystem {
 
     public void setLoaded(int loaded) {
         this.loaded = loaded;
+        Log.i("20311", "Loaded "+loaded+" balls.");
     }
 
     public boolean doneFiring() {
@@ -277,6 +302,7 @@ public class LoaderSubsystem {
     }
 
     public void resetShots() {
+        Log.i("20311", "Reset shot count.");
         shots = 0;
     }
 

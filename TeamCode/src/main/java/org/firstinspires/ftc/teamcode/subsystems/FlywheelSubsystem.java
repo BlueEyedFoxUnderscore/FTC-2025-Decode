@@ -13,6 +13,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import java.util.function.BooleanSupplier;
 
 public class FlywheelSubsystem {
+
     private final Telemetry telemetry;
     private final DcMotorEx shooter1, shooter2;
     private BooleanSupplier isLoaderReadyToShootSupplier;
@@ -32,7 +33,7 @@ public class FlywheelSubsystem {
         this.telemetry = telemetry;
 
 
-        final double fCoeff = 14.9244385071; // 16.072472238457042;
+        final double fCoeff = 14.9244385071*1.02; // 16.072472238457042;
         shooter1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter1.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -89,13 +90,11 @@ public class FlywheelSubsystem {
      * Sets the threshold and the speed. <br/>
      * The threshold is not relative to the speed. If the speed is above the threshold, it automatically switches to PID mode. Otherwise, it applies full power.
      * @param speed Requested speed, in RPM.
-     * @param threshold Requested threshold, in RPM. This is not relative.
      */
 
-    public void setRequested(double speed, double threshold, String name) {
+    public void setRequested(double speed, String name) {
         this.speed = speed;
-        this.threshold = threshold;
-        Log.i("20311", "FLYWHEEL REQUEST speed " + speed + ":"+threshold +" from "+ name);
+        Log.i("20311", "FLYWHEEL REQUEST speed " + speed +" from "+ name);
     }
 
 

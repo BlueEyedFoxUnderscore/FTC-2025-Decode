@@ -1,31 +1,50 @@
 package org.firstinspires.ftc.teamcode.opmodes.teleop;
 
 import static java.lang.StrictMath.PI;
+import static java.lang.StrictMath.atan2;
+import static java.lang.StrictMath.max;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.field.FieldManager;
 import com.bylazar.field.PanelsField;
 import com.bylazar.field.Style;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.PedroCoordinates;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.math.Vector;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.PoseHistory;
+import com.qualcomm.ftccommon.SoundPlayer;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.opmodes.auto.PathAuto;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 import com.acmerobotics.dashboard.FtcDashboard;
+
+import java.lang.annotation.Annotation;
+import java.util.LinkedList;
 
 
 @TeleOp//(name = "***FTC OpMode 2", group = "TeleOp")
 
 public class MainControl extends OpMode {
+    int mediumBeep;
+    int lowBattery;
     FtcDashboard dash;
     ElapsedTime imuTimeout = new ElapsedTime();
     private Follower follower;
@@ -50,13 +69,31 @@ public class MainControl extends OpMode {
 
     @Override
     public void init() {
+        mediumBeep = hardwareMap.appContext.getResources().getIdentifier("beep", "raw", hardwareMap.appContext.getPackageName());
+        lowBattery = hardwareMap.appContext.getResources().getIdentifier("lowbattery", "raw", hardwareMap.appContext.getPackageName());
+        if(hardwareMap.get(VoltageSensor.class, "Control Hub").getVoltage() < 12.5) {
+            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
+            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
+            telemetry.addLine("");
+            telemetry.addLine("            WARNING BATTERY VOLTAGE IS TOO");
+            telemetry.addLine("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+            telemetry.addLine("░░██░░░░░░░░█████░░░░██░░░░░██░░");
+            telemetry.addLine("░░██░░░░░░░██░░░██░░░██░░█░░██░░");
+            telemetry.addLine("░░██░░░░░░██░░░░░██░░██░███░██░░");
+            telemetry.addLine("░░██░░░░░░░██░░░██░░░████░████░░");
+            telemetry.addLine("░░███████░░░█████░░░░███░░░███░░");
+            telemetry.addLine("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+            telemetry.addLine("");
+        }
+        camera = hardwareMap.get(Limelight3A.class, "limelight");
+        camera.start();
         dash = FtcDashboard.getInstance();
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose());
 
 
-        follower.startTeleopDrive();
+        follower.startTeleopDrive(true);
         follower.update();
         imuTimeout.reset();
         RobotContainer.init(hardwareMap, telemetry);
@@ -64,6 +101,8 @@ public class MainControl extends OpMode {
         telemetry.addLine("Initialized - waiting for IMU calibration...");
         telemetry.update();
         Drawing.init();
+
+        follower.setStartingPose(new Pose(0, 0, 0));
 
         //odometry1.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
         //odometry1.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
@@ -74,9 +113,9 @@ public class MainControl extends OpMode {
 
     private double flywheelSpeed = 2600;
     TelemetryPacket packet;
-    double offset = 0;
+    double offset = PI;
 
-    double testp =80;
+    double testp = 65;
 
     ElapsedTime looptime = new ElapsedTime();
     @Override
@@ -124,7 +163,8 @@ public class MainControl extends OpMode {
         if (gamepad1.dpad_right) {
             if (canright) {
                 canright=false;
-                flywheelSpeed += 100;}
+                flywheelSpeed += 100;
+            }
         } else canright = true;
         if (gamepad1.dpad_left) {
             if (canleft) {
@@ -135,21 +175,161 @@ public class MainControl extends OpMode {
         if (gamepad1.dpadUpWasPressed()) {
             testp += 5.;
             RobotContainer.FLYWHEEL.testp(testp);
-            RobotContainer.FLYWHEEL.testp(testp);
         }
         if (gamepad1.dpadDownWasPressed()) {
             testp -= 5.;
             RobotContainer.FLYWHEEL.testp(testp);
-            RobotContainer.FLYWHEEL.testp(testp);
         }
-
 
         dash.sendTelemetryPacket(packet);
 //        gate.setPosition(gamepad1.right_trigger);
     }
 
+    private LinkedList<Pose> samples = new LinkedList<>();
+    private ElapsedTime elapsedTime = new ElapsedTime();
+
+    void setFollowerMaxPower(double maxPower) {
+        follower.setMaxPower(maxPower);
+    }
+
+
+    private double lastSample = 0;
+    private Limelight3A camera;
+    private static final double INCHES_PER_METER = 39.3701;
+
+    private void addSampleIfAvailable(LinkedList<Pose> poses) {
+        LLResult result = camera.getLatestResult();
+        if (result.isValid() && result.getTimestamp() != lastSample) {
+            lastSample = result.getTimestamp();
+            Pose3D botpose = result.getBotpose();
+            Position position = botpose.getPosition();
+            YawPitchRollAngles orientation = botpose.getOrientation();
+            poses.add(new Pose(
+                    72.0+(position.y * INCHES_PER_METER),
+                    72.0-(position.x * INCHES_PER_METER),
+                    orientation.getYaw(AngleUnit.RADIANS) - PI/2,
+                    PedroCoordinates.INSTANCE));
+        }
+    }
+
+    private double getSquaredError(Pose pose1, Pose pose2) {
+        return  ((pose1.getX() - pose2.getX()) * (pose1.getX() - pose2.getX())) +
+                ((pose1.getY() - pose2.getY()) * (pose1.getY() - pose2.getY())) +
+                ((pose1.getHeading() - pose2.getHeading()) * (pose1.getHeading() - pose2.getHeading()));
+    }
+
+    private void removeWorst(LinkedList<Pose> poses) {
+        Pose worst = null; // if null print warning
+        double worstDifference = 0;
+        for (Pose pose1: poses) {
+            double difference = 0;
+            for (Pose pose2: poses) {
+                difference += getSquaredError(pose1, pose2);
+            }
+            if (difference > worstDifference) {
+                worst = pose1;
+                worstDifference = difference;
+            }
+        }
+        if (worst == null) {
+            telemetry.addLine("WARNING: received identical poses.");
+            worst = poses.getFirst();
+        }
+        poses.remove(worst);
+    }
+
+    private Pose averagePose(LinkedList<Pose> poses) {
+        double x = 0;
+        double y = 0;
+        double h = 0;
+        for (Pose pose: poses) {
+            x += pose.getX();
+            y += pose.getY();
+            h += pose.getHeading();
+        }
+        double l = poses.size();
+        return new Pose(x/l, y/l, h/l);
+    }
+
+    private Pose getAverageOfBest(LinkedList<Pose> poses, int best) {
+        while (poses.size() > best) {
+            removeWorst(poses);
+        }
+        return averagePose(poses);
+    }
+
+
+
+
+    AprilState aprilState = AprilState.READY;
+
+    enum AprilState {SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, SAMPLE_TAGS_4, READY;}
+
+    boolean shouldSetHoldPointInitial = true, shouldSetHoldPointSecondary = true;
+    ElapsedTime holdTimeout = new ElapsedTime();
+    double lastHeading = 0;
+
+    PIDController headingController = new PIDController(1, 0, 0);
+    boolean square = false;
+    boolean toGo = false;
     private void updateDrive() {
-        follower.setTeleOpDrive(gamepad1.left_stick_y, gamepad1.left_stick_x, -gamepad1.right_stick_x, false, offset);
+        if (gamepad1.square && !square) {
+            square = true;
+            toGo = !toGo;
+        }
+
+        double v = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144 - 6 - follower.getPose().getY(),144 - 6 - follower.getPose().getX())-follower.getHeading()));
+        if (!(Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01 || gamepad1.right_trigger > 0.1)) {
+            if (shouldSetHoldPointInitial) {
+                holdTimeout.reset();
+                lastHeading = follower.getVelocity().getTheta();
+                shouldSetHoldPointInitial = false;
+                follower.holdPoint(toGo?new Pose(105d+2, 33d+.25):follower.getPose());
+            } else if ((holdTimeout.seconds() > 0.2) && shouldSetHoldPointSecondary) {
+                shouldSetHoldPointSecondary = false;
+                follower.holdPoint(toGo?new Pose(105d+2, 33d+.25):follower.getPose());
+                aprilState = AprilState.SAMPLE_TAGS;
+            }
+        } else {
+            aprilState = AprilState.READY;
+            if (!shouldSetHoldPointInitial) follower.startTeleopDrive(true);
+            follower.setTeleOpDrive(gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_trigger > 0.1? v: -gamepad1.right_stick_x/*-gamepad1.right_stick_x*/, false, offset);
+            shouldSetHoldPointInitial = shouldSetHoldPointSecondary = true;
+        }
+        switch (aprilState) {
+            case READY:
+                elapsedTime.reset();
+                samples.clear();
+                break;
+            case SAMPLE_TAGS:
+                elapsedTime.reset();
+                samples.clear();
+                aprilState = AprilState.SAMPLE_TAGS_2;
+            case SAMPLE_TAGS_2: /// Get apriltag samples
+                if (elapsedTime.seconds() > 0.3) {
+                    elapsedTime.reset();
+                    aprilState = AprilState.SAMPLE_TAGS_3;
+                }
+                break;
+            case SAMPLE_TAGS_3: /// Get apriltag samples
+                addSampleIfAvailable(samples);
+                if (samples.size() >= 15) {
+                    aprilState = AprilState.SAMPLE_TAGS_4;
+                    SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
+                    Pose average = getAverageOfBest(samples, 5);
+                    follower.setPose(average);
+                    follower.holdPoint(average);
+                    aprilState = AprilState.READY;
+                }
+                else break;
+        }
+        telemetry.addData("toGo", toGo);
+        telemetry.addData("joyX", gamepad1.left_stick_x);
+        telemetry.addData("joyY", gamepad1.left_stick_y);
+        telemetry.addData("spin", gamepad1.right_stick_x);
+        telemetry.addData("shouldHold", shouldSetHoldPointInitial);
+        telemetry.addData("velocity", follower.getVelocity().getMagnitude() < 0.1);
+        telemetry.addData("joystickIsSwizzle", !(Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01));
         follower.update();
     }
 
@@ -170,11 +350,11 @@ public class MainControl extends OpMode {
     }
 
     private void spinUp(String note) {
-        RobotContainer.FLYWHEEL.setRequested(flywheelSpeed, flywheelSpeed * 12.0/14.0, note); // 2800 2400
+        RobotContainer.FLYWHEEL.setRequested(flywheelSpeed, note); // 2800 2400
     }
 
     private void spinDown(String note) {
-        RobotContainer.FLYWHEEL.setRequested(0, 0, note);
+        RobotContainer.FLYWHEEL.setRequested(0, note);
     }
 
     private void cancelLaunch() {

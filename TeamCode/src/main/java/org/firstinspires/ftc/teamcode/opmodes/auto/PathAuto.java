@@ -100,10 +100,22 @@ public class PathAuto extends LinearOpMode {
 
         RedAuto.init(follower, this);
         setNextPath(RedAuto.READ_TO_REORIENT, "READ_TO_REORIENT from chosen AUTO");
-        if(hardwareMap.get(VoltageSensor.class, "Control Hub").getVoltage() < 12.5) SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
+        if(hardwareMap.get(VoltageSensor.class, "Control Hub").getVoltage() < 12.5) {
+            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
+            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
+            telemetry.addLine("");
+            telemetry.addLine("            WARNING BATTERY VOLTAGE IS TOO");
+            telemetry.addLine("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+            telemetry.addLine("░░██░░░░░░░░█████░░░░██░░░░░██░░");
+            telemetry.addLine("░░██░░░░░░░██░░░██░░░██░░█░░██░░");
+            telemetry.addLine("░░██░░░░░░██░░░░░██░░██░███░██░░");
+            telemetry.addLine("░░██░░░░░░░██░░░██░░░████░████░░");
+            telemetry.addLine("░░███████░░░█████░░░░███░░░███░░");
+            telemetry.addLine("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+            telemetry.addLine("");
+        }
         Log.i("20311", "Battery tested");
         while (!isStarted() && !isStopRequested()) {
-            telemetry.addData("hearing", nextPath.firstPath().getHeadingGoal(0));
             try {
                 Drawing.drawRobot(follower.getPose());
                 Drawing.sendPacket();
@@ -306,15 +318,15 @@ public class PathAuto extends LinearOpMode {
     }
 
     void spinUp(String note) {
-        RobotContainer.FLYWHEEL.setRequested(2750, 2500, note); //2600 was original //2800 too fast //2700 too slow
+        RobotContainer.FLYWHEEL.setRequested(2850, note);
     }
 
     void spinDown(String note) {
-        RobotContainer.FLYWHEEL.setRequested(0, 0, note);
+        RobotContainer.FLYWHEEL.setRequested(0, note);
     }
 
     void spinHalf(String note) {
-        RobotContainer.FLYWHEEL.setRequested(900, 750, note);
+        RobotContainer.FLYWHEEL.setRequested(900, note);
     }
 
     int cycleCount = 1;
