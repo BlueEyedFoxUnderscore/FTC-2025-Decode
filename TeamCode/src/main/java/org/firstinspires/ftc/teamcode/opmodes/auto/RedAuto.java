@@ -46,8 +46,8 @@ public class RedAuto {
                         new BezierLine(new Pose(121.716, 124.080), new Pose(95.381, 104.835))
                 )
                 .setConstantHeadingInterpolation(Math.toRadians(36))
-                .addParametricCallback(0, () -> auto.setNextPath(APRIL_TEST_2, "APRIL_TEST_2 from APRIL_TEST"))
-                .addParametricCallback(0, () -> auto.setRunAtEnd(auto::reorient, "auto::reorient from APRIL_TEST"))
+                .addParametricCallback(0.1, () -> auto.setNextPath(APRIL_TEST_2, "APRIL_TEST_2 from APRIL_TEST"))
+                .addParametricCallback(0.1, () -> auto.setRunAtEnd(auto::reorient, "auto::reorient from APRIL_TEST"))
                 .build();
 
         APRIL_TEST_2 = follower.pathBuilder()
@@ -103,20 +103,21 @@ public class RedAuto {
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                     .addParametricCallback(.02, RobotContainer.LOADER::intake)
-                //    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.5))
+                    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.8))
                 .addPath(
-                        new BezierLine(new Pose(97.069, 83.564), new Pose(121.210, 83.564))
+                        new BezierLine(new Pose(97.069, 83.564), new Pose(119, 83.564))
                 )
                     .setConstantHeadingInterpolation(0)
-                    .addParametricCallback(.99, () -> auto.setFollowerMaxPower(1.0))
+                    .addParametricCallback(.95, () -> auto.setFollowerMaxPower(1.0))
                 .addPath(
-                        new BezierLine(new Pose(121.210, 83.564), new Pose(95.381, 104.835))
+                        new BezierLine(new Pose(119, 83.564), new Pose(95.381, 104.835))
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                     .addParametricCallback(.01, () -> auto.setNextPath(afterCollectGroup1.get(), "afterCollectGroup1.get() from COLLECT_GROUP_1"))
                     .addParametricCallback(.02, () -> auto.setRunAtEnd(() -> auto.startNextPath("at end of COLLECT_GROUP_1"), "auto::startNextPath from COLLECT_GROUP_1"))
+                    .addParametricCallback(.95, RobotContainer.LOADER::cancelIntake)
                     .addParametricCallback(.95, () -> auto.spinUp("COLLECT_GROUP_1"))
-                //    .addParametricCallback(.99, auto::launchBalls3)
+                //    .addParametricCallback(.95, auto::launchBalls3)
                 .build();
 
 
@@ -131,28 +132,29 @@ public class RedAuto {
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                     .addParametricCallback(.02, RobotContainer.LOADER::intake)
-                //    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.5))
+                    .addParametricCallback(.90, () -> auto.setFollowerMaxPower(0.8))
                 .addPath(
                         new BezierLine(new Pose(96.900, 59.592), new Pose(121.547, 59.254))
                 )
                     .setConstantHeadingInterpolation(Math.toRadians(0))
-                    .addParametricCallback(.99, () -> auto.setFollowerMaxPower(1.0))
+                    .addParametricCallback(.95, () -> auto.setFollowerMaxPower(1.0))
                 .addPath(
                         new BezierLine(new Pose(121.547, 59.254), new Pose(110.586, 59.254))
                 )
                     .setConstantHeadingInterpolation(Math.toRadians(0))
                 .addPath(
                         new BezierCurve(
-                                new Pose(110.586, 59.254),
-                                new Pose(93.693, 57.397),
-                                new Pose(95.381, 104.835)
+                                new Pose(110.586,  59.254),
+                                new Pose( 93.693,  57.397),
+                                new Pose( 95.381, 104.835)
                         )
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                     .addParametricCallback(.01, () -> auto.setNextPath(afterCollectGroup2.get(), "afterCollectGroup2.get() from COLLECT_GROUP_1"))
                     .addParametricCallback(.02, () -> auto.setRunAtEnd(() -> auto.startNextPath("at end of COLLECT_GROUP_2"), "auto::startNextPath from COLLECT_GROUP_2"))
+                    .addParametricCallback(.95, RobotContainer.LOADER::cancelIntake)
                     .addParametricCallback(.95, ()->auto.spinUp("COLLECT_GROUP_2"))
-                //    .addParametricCallback(.99, auto::launchBalls3)
+                //    .addParametricCallback(.95, auto::launchBalls3)
                 .build();
 
 
@@ -171,15 +173,16 @@ public class RedAuto {
                         new BezierLine(new Pose(97.069, 35.283), new Pose(121.210, 35.620))
                 )
                     .setConstantHeadingInterpolation(Math.toRadians(0))
-                    .addParametricCallback(.99, () -> auto.setFollowerMaxPower(1.0))
+                    .addParametricCallback(.95, () -> auto.setFollowerMaxPower(1.0))
                 .addPath(
                         new BezierLine(new Pose(121.210, 35.620), new Pose(95.381, 104.835))
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                     .addParametricCallback(.01, () -> auto.setNextPath(afterCollectGroup3.get(), "afterCollectGroup3.get() from COLLECT_GROUP_1"))
                     .addParametricCallback(.02, () -> auto.setRunAtEnd(() -> auto.startNextPath("at end of COLLECT_GROUP_3"), "auto::startNextPath from COLLECT_GROUP_3"))
+                    .addParametricCallback(.95, RobotContainer.LOADER::cancelIntake)
                     .addParametricCallback(.95, ()->auto.spinUp("COLLECT_GROUP_3"))
-                //    .addParametricCallback(.99, auto::launchBalls3)
+                //    .addParametricCallback(.95, auto::launchBalls3)
                 .build();
 
         //GROUPSHOOT3 = follower
@@ -216,17 +219,18 @@ public class RedAuto {
                     .addParametricCallback(0.95, () -> auto.setState(PathAuto.AutoState.GET_TAG_ID)) // start reading
 
                 .addPath(
-                        new BezierLine(new Pose(86.603, 130.157), new Pose(100.783, 109.393)) // to sort position
+                        new BezierLine(new Pose(86.603, 130.157), new Pose(98, 98)) // to sort position
                 )
+                .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(45))
                     .addParametricCallback(.00, () -> {
                         afterCollectGroup1.set(CHECK_ORDER);
                         afterCollectGroup2.set(CHECK_ORDER);
                         afterCollectGroup3.set(CHECK_ORDER);
                     })
-                    .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(45))
                     .addParametricCallback(0.1, () -> auto.setRunAtEnd(auto::reorient, "auto::reorient from READ_TO_REORIENT"))
                     .addParametricCallback(0.15, () -> auto.spinUp("READ_TO_REORIENT"))
                     .addParametricCallback(0.2, () -> auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from READ_TO_REORIENT"))
+                    //.addParametricCallback(0.05, auto::eject)
                 .build();
 
         AtomicInteger lastGroup = new AtomicInteger();
@@ -235,8 +239,8 @@ public class RedAuto {
                 .pathBuilder()
                 //work
                 .addPath(auto.stayAt(READ_TO_REORIENT.endPoint()))
-                    .setConstantHeadingInterpolation(Math.toRadians(36))
-                    //.addParametricCallback(0.2, ()->auto.spinUp("CHECK_ORDER"))
+                    .setConstantHeadingInterpolation(Math.toRadians(45))
+                    .addParametricCallback(0.2, ()->auto.spinUp("CHECK_ORDER"))
                     .addParametricCallback(0.5, () -> auto.setRunAtEnd(() ->
                             {
                                 Log.i("20311", "Doing CHECK_ORDER with h"+auto.heldstate+" g"+auto.gamestate);
@@ -446,7 +450,7 @@ public class RedAuto {
         SORT_TO_SHOOT = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(123.236, 118.145), new Pose(100.783, 109.393))
+                        new BezierLine(new Pose(123.236, 118.145), new Pose(98, 98))
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(20), Math.toRadians(45))
                     .addParametricCallback(0.1, () -> auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from SORT_TO_SHOOT"))
@@ -457,12 +461,12 @@ public class RedAuto {
         SHOOT_TO_SORT = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(100.783, 109.393), new Pose(123.236, 118.145))
+                        new BezierLine(new Pose(98, 98), new Pose(123.236, 118.145))
                 )
                     .setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(20))
-                    .addParametricCallback(0.0, () -> auto.spinHalf("SHOOT_TO_SORT slow spin for sorting"))
+                    .addParametricCallback(0.1, () -> auto.spinHalf("SHOOT_TO_SORT slow spin for sorting"))
                     .addParametricCallback(0.2, () -> auto.setNextPath(SORT_TO_SHOOT, "SHOOT_TO_SORT from SHOOT_TO_SORT")) // set this to what hapens after cycling
-                    .addParametricCallback(0.5, () -> auto.setRunAtEnd(auto::cycle1, "auto::sort from SHOOT_TO_SORT")) // rename this cyclen, have cyclen remember next path and change it to sort_scan_forwards there instead if you want to cycle, or restore and call next path if done.
+                    .addParametricCallback(0.9, () -> auto.setRunAtEnd(auto::cycle1, "auto::sort from SHOOT_TO_SORT")) // rename this cyclen, have cyclen remember next path and change it to sort_scan_forwards there instead if you want to cycle, or restore and call next path if done.
                 .build();
 
     }

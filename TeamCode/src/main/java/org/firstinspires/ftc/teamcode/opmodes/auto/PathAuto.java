@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.opmodes.auto;
 
+import static java.lang.StrictMath.E;
 import static java.lang.StrictMath.PI;
 import static java.lang.StrictMath.max;
 import static java.lang.StrictMath.nextAfter;
@@ -31,6 +32,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.Gate;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.FlywheelSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 
 import java.util.LinkedList;
@@ -52,7 +54,7 @@ public class PathAuto extends LinearOpMode {
         state = AutoState.SHOOTING;
     }
 
-    public  enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, GET_TAG_ID, GET_TAG_ID_2, CYCLING, CYCLING_2, CYCLING_3, CYCLING_READY, SAMPLE_TAGS_4}
+    public  enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, GET_TAG_ID, GET_TAG_ID_2, CYCLING, CYCLING_2, CYCLING_3, CYCLING_READY, EJECT, EJECT_2, SAMPLE_TAGS_4}
     public enum BallState {PPG, PGP, GP, PG, EMPTY, GPP}
 
     private AutoState state = AutoState.READY;
@@ -69,7 +71,7 @@ public class PathAuto extends LinearOpMode {
     }
 
     private Runnable runAtEnd = null, tempRun = null; // () -> {};
-    BallState gamestate = null;
+    BallState gamestate = BallState.PGP;
     BallState heldstate = BallState.PGP;
     int tag;
     int ppg = 0;
@@ -254,6 +256,18 @@ public class PathAuto extends LinearOpMode {
                         startNextPath("autostatemachine = CYCLING_3");
                     }
                     break;
+                case EJECT:
+                    spinHalf("");
+                    launchBalls1();
+                    state = AutoState.EJECT_2;
+                case EJECT_2:
+                    if (RobotContainer.LOADER.doneFiring()) {
+                        RobotContainer.LOADER.cancelLaunch();
+                        spinDown("state machine SHOOTING");
+                        startNextPath("autostatemachine = SHOOTING");
+                        state = AutoState.READY;
+                    }
+                    break;
                 default: int fucksUpTheProgram = 0 / 0;
             }
 
@@ -318,7 +332,7 @@ public class PathAuto extends LinearOpMode {
     }
 
     void spinUp(String note) {
-        RobotContainer.FLYWHEEL.setRequested(2850, note);
+        RobotContainer.FLYWHEEL.setRequested(2700, note);
     }
 
     void spinDown(String note) {
@@ -477,8 +491,8 @@ public class PathAuto extends LinearOpMode {
     }
     //*/
 
-    void cancelIntake() {
-
+    void eject() {
+        state = AutoState.EJECT;
     }
 }
 

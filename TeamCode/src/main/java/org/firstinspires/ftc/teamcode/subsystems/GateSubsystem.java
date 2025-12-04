@@ -13,7 +13,7 @@ public class GateSubsystem {
     }
 
     public boolean isStable() {
-        return elapsedTime.seconds() > 0.20;
+        return elapsedTime.seconds() > 0.30;
     }
 
     public void open() {

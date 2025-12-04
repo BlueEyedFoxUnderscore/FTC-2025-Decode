@@ -159,7 +159,7 @@ public class MainControl extends OpMode {
         telemetry.addLine(String.valueOf(RobotContainer.FLYWHEEL.getSpeed1()));
         telemetry.clear();
 
-
+        /*
         if (gamepad1.dpad_right) {
             if (canright) {
                 canright=false;
@@ -180,6 +180,7 @@ public class MainControl extends OpMode {
             testp -= 5.;
             RobotContainer.FLYWHEEL.testp(testp);
         }
+         */
 
         dash.sendTelemetryPacket(packet);
 //        gate.setPosition(gamepad1.right_trigger);
@@ -269,7 +270,7 @@ public class MainControl extends OpMode {
     ElapsedTime holdTimeout = new ElapsedTime();
     double lastHeading = 0;
 
-    PIDController headingController = new PIDController(1, 0, 0);
+    PIDController headingController = new PIDController(1, 0, 0.1);
     boolean square = false;
     boolean toGo = false;
     private void updateDrive() {
@@ -306,14 +307,14 @@ public class MainControl extends OpMode {
                 samples.clear();
                 aprilState = AprilState.SAMPLE_TAGS_2;
             case SAMPLE_TAGS_2: /// Get apriltag samples
-                if (elapsedTime.seconds() > 0.3) {
+                if (true || elapsedTime.seconds() > 0.3) {
                     elapsedTime.reset();
                     aprilState = AprilState.SAMPLE_TAGS_3;
                 }
                 break;
             case SAMPLE_TAGS_3: /// Get apriltag samples
                 addSampleIfAvailable(samples);
-                if (samples.size() >= 15) {
+                if (samples.size() >= 8) {
                     aprilState = AprilState.SAMPLE_TAGS_4;
                     SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                     Pose average = getAverageOfBest(samples, 5);
