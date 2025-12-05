@@ -15,6 +15,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RedAuto {
+    public static PathChain PPG_EJECT_PATH_1;
+    public static PathChain PGP_EJECT_PATH_1;
+    public static PathChain GPP_EJECT_PATH_1;
+    public static PathChain GPP_EJECT_PATH_2;
+    public static PathChain GPP_EJECT_PATH_2b;
+    public static PathChain GPP_EJECT_PATH_3;
     public static PathChain CHECK_ORDER;
     public static PathChain SORT_TO_SHOOT;
     public static PathChain SORT_SCAN_BACKWARDS;
@@ -40,20 +46,25 @@ public class RedAuto {
         AtomicReference<PathChain> afterCollectGroup2 = new AtomicReference<>();
         AtomicReference<PathChain> afterCollectGroup3 = new AtomicReference<>();
 
-        APRIL_TEST = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(121.716, 124.080), new Pose(95.381, 104.835))
-                )
-                .setConstantHeadingInterpolation(Math.toRadians(36))
-                .addParametricCallback(0.1, () -> auto.setNextPath(APRIL_TEST_2, "APRIL_TEST_2 from APRIL_TEST"))
-                .addParametricCallback(0.1, () -> auto.setRunAtEnd(auto::reorient, "auto::reorient from APRIL_TEST"))
-                .build();
 
-        APRIL_TEST_2 = follower.pathBuilder()
-                .addPath(new Path(new BezierLine (new Pose(95.381, 104.835), new Pose(144.0-24.0*2-17.25/2.0,  144.0-24.0*1+16.0/2.0))))
-                .setLinearHeadingInterpolation(Math.toRadians(36), 0)
-                .build();
+        {
+            APRIL_TEST = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(121.716, 124.080), new Pose(95.381, 104.835))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(36))
+                    .addParametricCallback(0.1, () -> auto.setNextPath(APRIL_TEST_2, "APRIL_TEST_2 from APRIL_TEST"))
+                    .addParametricCallback(0.1, () -> auto.setRunAtEnd(auto::reorient, "auto::reorient from APRIL_TEST"))
+                    .build();
+        }
+
+        {
+            APRIL_TEST_2 = follower.pathBuilder()
+                    .addPath(new Path(new BezierLine(new Pose(95.381, 104.835), new Pose(144.0 - 24.0 * 2 - 17.25 / 2.0, 144.0 - 24.0 * 1 + 16.0 / 2.0))))
+                    .setLinearHeadingInterpolation(Math.toRadians(36), 0)
+                    .build();
+        }
 
         APRIL_TEST_3 = follower.pathBuilder()
                 .addPath(new Path(new BezierLine (new Pose(95.381, 104.835), new Pose(144.0-24.0*2-17.25/2.0,  144.0-24.0*4+16.0/2.0))))
@@ -87,7 +98,18 @@ public class RedAuto {
                 .addPath(auto.stayAt(NAIVE_AUTO_START.endPoint()))
                     .setConstantHeadingInterpolation(Math.toRadians(36))
                     .addParametricCallback(.00, () -> {
-                        auto.setNextPath(COLLECT_GROUP_1, "COLLECT_GROUP_1 from REORIENT");
+                        switch (auto.gamestate) {
+                            case GPP:
+                                auto.setNextPath(GPP_EJECT_PATH_1, "GPP_EJECT_PATH_1 from REORIENT");
+                                break;
+                            case PGP:
+                                auto.setNextPath(PGP_EJECT_PATH_1, "PGP_EJECT_PATH_1 from REORIENT");
+                                break;
+                            case PPG:
+                                auto.setNextPath(PPG_EJECT_PATH_1, "PPG_EJECT_PATH_1 from REORIENT");
+                                break;
+                            default:
+                        }
                         auto.reorient();
                     })
                 .build();
@@ -222,28 +244,45 @@ public class RedAuto {
                         new BezierLine(new Pose(86.603, 130.157), new Pose(98, 98)) // to sort position
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(45))
-                    .addParametricCallback(.00, () -> {
+
+                    /*.addParametricCallback(.00, () -> {
                         afterCollectGroup1.set(CHECK_ORDER);
                         afterCollectGroup2.set(CHECK_ORDER);
                         afterCollectGroup3.set(CHECK_ORDER);
+                    })*/
+                    .addParametricCallback(.50, () -> {
+                        switch (auto.gamestate) {
+                            case GPP:
+                                auto.setNextPath(GPP_EJECT_PATH_1, "GPP_EJECT_PATH_1 from REORIENT");
+                                break;
+                            case PGP:
+                                auto.setNextPath(PGP_EJECT_PATH_1, "PGP_EJECT_PATH_1 from REORIENT");
+                                break;
+                            case PPG:
+                                auto.setNextPath(PPG_EJECT_PATH_1, "PPG_EJECT_PATH_1 from REORIENT");
+                                break;
+                            default:
+                        }
+                        auto.setRunAtEnd(auto::reorient, "auto::reorient from READ_TO_REORIENT");
                     })
-                    .addParametricCallback(0.1, () -> auto.setRunAtEnd(auto::reorient, "auto::reorient from READ_TO_REORIENT"))
-                    .addParametricCallback(0.15, () -> auto.spinUp("READ_TO_REORIENT"))
-                    .addParametricCallback(0.2, () -> auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from READ_TO_REORIENT"))
+                    /*.addParametricCallback(0.1, () -> auto.setRunAtEnd(auto::reorient, "auto::reorient from READ_TO_REORIENT"))*/
+                    //.addParametricCallback(0.15, () -> auto.spinUp("READ_TO_REORIENT"))
+                    //.addParametricCallback(0.2, () -> auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from READ_TO_REORIENT"))
                     //.addParametricCallback(0.05, auto::eject)
                 .build();
 
         AtomicInteger lastGroup = new AtomicInteger();
 
-        CHECK_ORDER = follower
-                .pathBuilder()
-                //work
-                .addPath(auto.stayAt(READ_TO_REORIENT.endPoint()))
+        {
+            CHECK_ORDER = follower
+                    .pathBuilder()
+                    //work
+                    .addPath(auto.stayAt(READ_TO_REORIENT.endPoint()))
                     .setConstantHeadingInterpolation(Math.toRadians(45))
-                    .addParametricCallback(0.2, ()->auto.spinUp("CHECK_ORDER"))
+                    .addParametricCallback(0.2, () -> auto.spinUp("CHECK_ORDER"))
                     .addParametricCallback(0.5, () -> auto.setRunAtEnd(() ->
                             {
-                                Log.i("20311", "Doing CHECK_ORDER with h"+auto.heldstate+" g"+auto.gamestate);
+                                Log.i("20311", "Doing CHECK_ORDER with h" + auto.heldstate + " g" + auto.gamestate);
                                 switch (auto.heldstate) {
                                     case PGP:
                                         switch (auto.gamestate) {
@@ -313,7 +352,7 @@ public class RedAuto {
                                             case PGP:
                                                 Log.i("20311", "executing auto.launchBalls2() from CHECK_ORDER hGP, gPGP after end");
                                                 auto.launchBalls2();
-                                                auto.setRunAtEnd(auto::launchBalls2,"auto::launchBalls2 from CHECK_ORDER hGP, gPGP");
+                                                auto.setRunAtEnd(auto::launchBalls2, "auto::launchBalls2 from CHECK_ORDER hGP, gPGP");
                                                 auto.heldstate = PathAuto.BallState.EMPTY;
                                                 break;
                                             case GPP:
@@ -421,13 +460,14 @@ public class RedAuto {
                                                         auto.startNextPath("from CHECK_ORDER hEMPTY, gPP, 3");
                                                         break;
                                                 }
-                                            break;
+                                                break;
                                         }
-                                    break;
+                                        break;
                                 }
                             }
                             , "complex behavior from CHECK_ORDER"))
-                .build();
+                    .build();
+        }
 
         SORT_SCAN_FORWARDS = follower
                 .pathBuilder()
@@ -469,6 +509,37 @@ public class RedAuto {
                     .addParametricCallback(0.9, () -> auto.setRunAtEnd(auto::cycle1, "auto::sort from SHOOT_TO_SORT")) // rename this cyclen, have cyclen remember next path and change it to sort_scan_forwards there instead if you want to cycle, or restore and call next path if done.
                 .build();
 
+
+        GPP_EJECT_PATH_1 = follower.pathBuilder()
+                .addPath(auto.stayAt(READ_TO_REORIENT.lastPath().endPose()))
+                .setConstantHeadingInterpolation(Math.toRadians(45))
+                .addParametricCallback(0.5, auto::eject)
+                .addParametricCallback(0.2, () -> auto.setNextPath(GPP_EJECT_PATH_2, ""))
+                .build();
+
+
+        GPP_EJECT_PATH_2 = follower.pathBuilder()
+                .addPath(auto.stayAt(READ_TO_REORIENT.lastPath().endPose()))
+                    .setConstantHeadingInterpolation(Math.toRadians(45))
+                    .addParametricCallback(0.1, () -> auto.spinUp("inadfsufdsaughaiusghaiusghuisado"))
+                    .addParametricCallback(0.2, () -> auto.setNextPath(GPP_EJECT_PATH_2b, "qtiuyqtweyuieqwyuiewoqytuioeqwyoriuiouyrqoiew"))
+                    .addParametricCallback(0.3, () -> auto.setRunAtEnd(() -> auto.startNextPath("adsioguhghguihiughughuguhghuighiughiughiughiughiu"), "agdggdugydugydugdyuigyduigyduigydugyduigyduigyduigyduigyduigyduigyduigydui"))
+                    .build();
+
+        GPP_EJECT_PATH_2b = follower.pathBuilder()
+                .addPath(auto.stayAt(READ_TO_REORIENT.lastPath().endPose()))
+                .setConstantHeadingInterpolation(Math.toRadians(45))
+                .addParametricCallback(0.1, () -> auto.setNextPath(COLLECT_GROUP_2, "gyuygugygygygyygygygygy"))
+                .addParametricCallback(0.2, () -> auto.setRunAtEnd(() -> auto.startNextPath("jykljyjklyklyjkbnvm,nvxzvcgsahjfkdasftdsag"), "yiuyucixvyuicyviucxyviucxyviucxyigdsfhkjdutyeryewqiuryeiuwqyroiuewyiuorwq"))
+                .addParametricCallback(0.3, () -> afterCollectGroup2.set(GPP_EJECT_PATH_3))
+                .addParametricCallback(0.5, () -> auto.setRunAtEnd(auto::launchBalls2, "ahdstuigfkajbxcmnvbzn,mvbmcxznvb,hetoiuqtwyeqio"))
+                .build();
+
+        GPP_EJECT_PATH_3 = follower.pathBuilder()
+                .addPath(auto.stayAt(REORIENT.lastPath().endPose()))
+                    .setConstantHeadingInterpolation(Math.toRadians(45))
+                .addParametricCallback(0.2, auto::eject)
+                .build();
     }
 
     static Runnable andThen(Runnable ...runnables) {
