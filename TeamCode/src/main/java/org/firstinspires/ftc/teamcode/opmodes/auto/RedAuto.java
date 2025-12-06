@@ -109,7 +109,7 @@ public class RedAuto {
                                     auto.setRunAtEnd(()->follower.followPath(PGP_EJECT_PATH_1), "PGP_EJECT_PATH_1 from REORIENT");
                                     break;
                                 case PPG:
-                                    auto.setRunAtEnd(()->follower.followPath(PGP_EJECT_PATH_1), "PPG_EJECT_PATH_1 from REORIENT");
+                                    auto.setRunAtEnd(()->follower.followPath(PPG_EJECT_PATH_1), "PPG_EJECT_PATH_1 from REORIENT");
                                     break;
                                 default:
                             }
@@ -218,6 +218,7 @@ public class RedAuto {
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0.0, () -> auto.setNextPath(PPG_EJECT_PATH_1b, "from PPG_EJECT_PATH_1 schedule GPP_EJECT_PATH_1b at end"))
+                    .addParametricCallback(0.0, () -> auto.spinUp("from PPG_EJECT_PATH_1"))
                     .addParametricCallback(0.0, () -> auto.setRunAtEnd(auto::launchBalls1, "from PPG_EJECT_PATH_1 schedule auto::launchBalls1 at end"))
                 .build();
     
@@ -226,6 +227,7 @@ public class RedAuto {
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0.0, auto::eject)
+                    .addParametricCallback(0.0, () -> auto.setNextPath(PPG_EJECT_PATH_2, "from PPG_EJECT_PATH_1b"))
                 .build();
 
         // Spin up for the preload shot
@@ -234,7 +236,7 @@ public class RedAuto {
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
                     .addParametricCallback(0.0, () -> auto.spinUp("from PPG_EJECT_PATH_2"))
-                    .addParametricCallback(0.0, () -> auto.setRunAtEnd(() -> follower.followPath(GPP_EJECT_PATH_2b), "from PPG_EJECT_PATH_2 goto PPG_EJECT_PATH2b"))
+                    .addParametricCallback(0.0, () -> auto.setRunAtEnd(() -> follower.followPath(PPG_EJECT_PATH_2b), "from PPG_EJECT_PATH_2 goto PPG_EJECT_PATH2b"))
 
                 .build();
 
