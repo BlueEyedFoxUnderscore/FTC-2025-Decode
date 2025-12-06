@@ -31,6 +31,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.Storage;
 import org.firstinspires.ftc.teamcode.opmodes.auto.PathAuto;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
@@ -90,7 +91,7 @@ public class MainControl extends OpMode {
         dash = FtcDashboard.getInstance();
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose());
+        //follower.setStartingPose(new Pose());
 
 
         follower.startTeleopDrive(true);
@@ -102,7 +103,8 @@ public class MainControl extends OpMode {
         telemetry.update();
         Drawing.init();
 
-        follower.setStartingPose(new Pose(0, 0, 0));
+        follower.setStartingPose(Storage.ORIENTPOSE == null? new Pose(0, 0, 0): Storage.ORIENTPOSE);
+        //offset = -Storage.ORIENTPOSE.getHeading();
 
         //odometry1.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
         //odometry1.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);

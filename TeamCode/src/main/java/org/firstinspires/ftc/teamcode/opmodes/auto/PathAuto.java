@@ -31,6 +31,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.Gate;
+import org.firstinspires.ftc.teamcode.Storage;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.FlywheelSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
@@ -128,6 +129,8 @@ public class PathAuto extends LinearOpMode {
             telemetry.update();
         }
         follower.setStartingPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
+        follower.setPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
+        Log.i("20311", "Initial starting pose " + nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)).toString());
         startNextPath("Initialize");
         //follower.followPath(RedAuto.APRIL_TEST);
 
@@ -280,15 +283,17 @@ public class PathAuto extends LinearOpMode {
             telemetry.addData("pgp", pgp);
             telemetry.addData("gpp", gpp);
 
-            isStoppedGate.update();
-            if (isStoppedGate.trueForAtLeast(2)) {
-                isStoppedGate.reset();
-                follower.setPose(getRobotPoseFromCamera());
-                // telemetry.addData("ConvertedCameraPose", getRobotPoseFromCamera().toString());
-                // telemetry.addData("BotPose", follower.getPose().toString());
-            }
 
-			if (amAlive--==0) {
+//            isStoppedGate.update();
+
+//            if (isStoppedGate.trueForAtLeast(2)) {
+//                isStoppedGate.reset();
+//                follower.setPose(getRobotPoseFromCamera());
+//                // telemetry.addData("ConvertedCameraPose", getRobotPoseFromCamera().toString());
+//                // telemetry.addData("BotPose", follower.getPose().toString());
+//            }
+
+            if (amAlive--==0) {
 				Log.i("20311", "Alive and updating robot container");
 				amAlive=100;
 			}
@@ -311,6 +316,7 @@ public class PathAuto extends LinearOpMode {
             }
             telemetry.update();
         }
+        Storage.ORIENTPOSE = follower.getPose();
 		Log.i("20311", "Exited the opmode");
     }
 
