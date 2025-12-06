@@ -80,6 +80,7 @@ public class PathAuto extends LinearOpMode {
 
     private PathChain afterCycle = null;
 
+    int amAlive=100;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -101,7 +102,7 @@ public class PathAuto extends LinearOpMode {
         int lowBattery = hardwareMap.appContext.getResources().getIdentifier("lowbattery", "raw", hardwareMap.appContext.getPackageName());
 
         RedAuto.init(follower, this);
-        setNextPath(RedAuto.READ_TO_REORIENT, "READ_TO_REORIENT from chosen AUTO");
+        setNextPath(RedAuto.START_EJECT_SORT_AUTO, "START_EJECT_SORT_AUTO from chosen AUTO");
         if(hardwareMap.get(VoltageSensor.class, "Control Hub").getVoltage() < 12.5) {
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
@@ -147,6 +148,7 @@ public class PathAuto extends LinearOpMode {
             }
 
             ///  S t a t e m a c h i n e
+
             if(laststate != state) {
                 laststate=state;
                 Log.i("20311", "AUTOSTATE CHANGED TO: "+state);
@@ -202,7 +204,7 @@ public class PathAuto extends LinearOpMode {
                     samples.clear();
                     state = AutoState.SAMPLE_TAGS_2;
                 case SAMPLE_TAGS_2: /// Get apriltag samples
-                    if (elapsedTime.seconds() > 0.3) {
+                    if (elapsedTime.seconds() > 0.1) {
                         elapsedTime.reset();
                         state = AutoState.SAMPLE_TAGS_3;
                         SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
@@ -210,7 +212,7 @@ public class PathAuto extends LinearOpMode {
                     break;
                 case SAMPLE_TAGS_3: /// Get apriltag samples
                     addSampleIfAvailable(samples);
-                    if (elapsedTime.seconds() > 0.5) {
+                    if (elapsedTime.seconds() > 0.3) {
                         state = AutoState.SAMPLE_TAGS_4;
                         SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                     }
@@ -268,7 +270,9 @@ public class PathAuto extends LinearOpMode {
                         state = AutoState.READY;
                     }
                     break;
-                default: int fucksUpTheProgram = 0 / 0;
+                default:
+                	Log.i("20311", "Should net to this default lksadflaksdf");
+                	break;
             }
 
             telemetry.addData("b a l l", gamestate != null? gamestate.name(): "null");
@@ -284,6 +288,10 @@ public class PathAuto extends LinearOpMode {
                 // telemetry.addData("BotPose", follower.getPose().toString());
             }
 
+			if (amAlive--==0) {
+				Log.i("20311", "Alive and updating robot container");
+				amAlive=100;
+			}
             RobotContainer.update();
 
             ///  Telemetry
@@ -303,7 +311,7 @@ public class PathAuto extends LinearOpMode {
             }
             telemetry.update();
         }
-
+		Log.i("20311", "Exited the opmode");
     }
 
     public void setState(AutoState state) {
@@ -340,7 +348,7 @@ public class PathAuto extends LinearOpMode {
     }
 
     void spinHalf(String note) {
-        RobotContainer.FLYWHEEL.setRequested(900, note);
+        RobotContainer.FLYWHEEL.setRequested(1100, note);
     }
 
     int cycleCount = 1;
@@ -382,9 +390,6 @@ public class PathAuto extends LinearOpMode {
         state = AutoState.SAMPLE_TAGS;
     }
 
-    BezierLine stayAt(Pose location) {
-        return new BezierLine(location, location.withY(location.getY() + 1./100.));
-    }
     private static final double INCHES_PER_METER = 39.3701;
 
     private void requestRecalibration() {

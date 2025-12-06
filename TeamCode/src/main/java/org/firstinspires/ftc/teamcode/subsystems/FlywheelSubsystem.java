@@ -33,13 +33,13 @@ public class FlywheelSubsystem {
         this.telemetry = telemetry;
 
 
-        final double fCoeff = 14.9244385071*1.02; // 16.072472238457042;
+        final double fCoeff = 14.9244385071*1.01; // 16.072472238457042;
         shooter1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter1.setDirection(DcMotorSimple.Direction.REVERSE);
         shooter2.setDirection(DcMotorSimple.Direction.REVERSE);
-        shooter1.setVelocityPIDFCoefficients(65, 0, 0, fCoeff);
-        shooter2.setVelocityPIDFCoefficients(65, 0, 0, fCoeff);
+        shooter1.setVelocityPIDFCoefficients(85, 0, 0, fCoeff);
+        shooter2.setVelocityPIDFCoefficients(85, 0, 0, fCoeff);
         shooter1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
@@ -63,9 +63,15 @@ public class FlywheelSubsystem {
     /**
      * Updates the speed with respect to the current requested speed.
      */
+     public boolean isSpeedChangeRequested() {return priorspeed!=speed;}
+    double priorspeed=0;
     public void update() {
         if (isLoaderReadyToShootSupplier.getAsBoolean()) {
-            setVelocity(speed);
+            if(priorspeed != speed) {
+            	priorspeed=speed;
+            	Log.i("20311", "Speed was actually set to "+speed);
+	            setVelocity(speed);
+			}
         }
     }
 
