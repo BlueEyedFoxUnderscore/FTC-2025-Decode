@@ -146,7 +146,8 @@ public class LoaderSubsystem {
 
         intake.setVelocityPIDFCoefficients(0, 0, -5, 25 );
         intake.setPositionPIDFCoefficients(10);
-        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setTargetPosition(intake.getCurrentPosition());
+        intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         intake.setPower(0.15);
         // test Intake pid
         // intake.setTargetPosition(intake.getCurrentPosition());
@@ -190,7 +191,13 @@ public class LoaderSubsystem {
      * Updates all values of the gate and runs the state machine forward.
      */
 
+    private boolean firstRun = true;
+
     public void update() {
+        if (firstRun) {
+            firstRun = false;
+            intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        }
         if (gamepad1 != null) {
             if (gamepad1.dpadUpWasPressed()) {
                 intake.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients());
