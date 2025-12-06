@@ -348,7 +348,7 @@ public class PathAuto extends LinearOpMode {
     }
 
     void spinHalf(String note) {
-        RobotContainer.FLYWHEEL.setRequested(1100, note);
+        RobotContainer.FLYWHEEL.setRequested(900, note);
     }
 
     int cycleCount = 1;

@@ -291,7 +291,7 @@ public class LoaderSubsystem {
                 Log.i("20311", "Shots = "+shots);
                 break;
             case LAUNCH_RELOAD:
-                if (elapsedTime.seconds() > 0.3) { // 0.20
+                if (elapsedTime.seconds() > 0.2) { // 0.20
                     shots += 1;
                     transfer.setTargetPosition(transfer.getCurrentPosition() + (int) (537 * .9));
                     transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -307,7 +307,7 @@ public class LoaderSubsystem {
                 break;
             case LAUNCH_WAIT_RELOAD_FINISH:
                 isFlywheelStableGate.update();
-                if (elapsedTime.seconds() > 0.4) { // 0.20
+                if (elapsedTime.seconds() > 0.2) { // 0.20
                     if (isFlywheelStableGate.trueForAtLeast(0.2)) state = LoaderState.LAUNCH_INJECT;
                     if (request != LoaderState.LAUNCH || flywheelSubsystem.isSpeedChangeRequested()) {
                         state = LoaderState.READY;
