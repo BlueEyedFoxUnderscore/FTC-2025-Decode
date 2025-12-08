@@ -317,7 +317,7 @@ public class PathAuto extends LinearOpMode {
             telemetry.update();
         }
         Storage.ORIENTPOSE = follower.getPose();
-		Log.i("20311", "Exited the opmode");
+        Log.i("20311", "Exited the opmode");
     }
 
     public void setState(AutoState state) {
@@ -346,7 +346,7 @@ public class PathAuto extends LinearOpMode {
     }
 
     void spinUp(String note) {
-        RobotContainer.FLYWHEEL.setRequested(2700, note);
+        RobotContainer.FLYWHEEL.setRequested(2200, note);
     }
 
     void spinDown(String note) {
@@ -354,7 +354,7 @@ public class PathAuto extends LinearOpMode {
     }
 
     void spinHalf(String note) {
-        RobotContainer.FLYWHEEL.setRequested(900, note);
+        RobotContainer.FLYWHEEL.setRequested(1000, note);
     }
 
     int cycleCount = 1;

@@ -13,7 +13,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Gate;
 
 public class LoaderSubsystem {
-	private int amAlive=100;
+    private int amAlive=100;
     private final Telemetry telemetry;
     private int previousPositionTransfer;
     private final Gate isFlywheelStableGate;
@@ -120,7 +120,7 @@ public class LoaderSubsystem {
     private FlywheelSubsystem flywheelSubsystem;
 
     public void setFlywheel(FlywheelSubsystem interlock) {
-    	this.flywheelSubsystem = interlock;
+        this.flywheelSubsystem = interlock;
     }
 
 
@@ -197,24 +197,25 @@ public class LoaderSubsystem {
         if (firstRun) {
             firstRun = false;
             intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            intake.setPower(0.15);
         }
         if (gamepad1 != null) {
             if (gamepad1.dpadUpWasPressed()) {
                 intake.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients());
             }
         }
-		if(previousState != state) {
-			previousState=state;
-			Log.i("20311", "LOADER SUBSYSTEM STATE CHANGED TO: "+state);
-		}
-		if(previousRequest != request) {
-			previousRequest=request;
-			Log.i("20311", "LOADER SUBSYSTEM REQUESTED STATE CHANGED TO: "+request);
-		}
-		if (amAlive--==0) {
-			Log.i("20311", "Alive and running loader state machine");
-			amAlive=100;
-		}
+        if(previousState != state) {
+            previousState=state;
+            Log.i("20311", "LOADER SUBSYSTEM STATE CHANGED TO: "+state);
+        }
+        if(previousRequest != request) {
+            previousRequest=request;
+            Log.i("20311", "LOADER SUBSYSTEM REQUESTED STATE CHANGED TO: "+request);
+        }
+        if (amAlive--==0) {
+            Log.i("20311", "Alive and running loader state machine");
+            amAlive=100;
+        }
         switch(state) {
             case INITIALIZE:
                 gate.open();
@@ -237,7 +238,7 @@ public class LoaderSubsystem {
                     intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     intake.setPower(0.8);
-                    transfer.setPower(0.15);
+                    transfer.setPower(0.3);
                 }
                 break;
             case INTAKING:
@@ -300,9 +301,9 @@ public class LoaderSubsystem {
             case LAUNCH_RELOAD:
                 if (elapsedTime.seconds() > 0.2) { // 0.20
                     shots += 1;
-                    transfer.setTargetPosition(transfer.getCurrentPosition() + (int) (537 * .9));
+                    transfer.setTargetPosition(transfer.getCurrentPosition() + (int) (537 * 1.));
                     transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    intake.setTargetPosition(intake.getCurrentPosition() + (int) (145 * .9));
+                    intake.setTargetPosition(intake.getCurrentPosition() + (int) (145 * 1.));
                     intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     transfer.setPower(1);
                     intake.setPower(1);

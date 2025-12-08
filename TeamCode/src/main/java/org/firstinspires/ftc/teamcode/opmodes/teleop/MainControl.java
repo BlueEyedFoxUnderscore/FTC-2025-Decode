@@ -4,6 +4,8 @@ import static java.lang.StrictMath.PI;
 import static java.lang.StrictMath.atan2;
 import static java.lang.StrictMath.max;
 
+import android.util.Log;
+
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.field.FieldManager;
@@ -20,7 +22,6 @@ import com.pedropathing.util.PoseHistory;
 import com.qualcomm.ftccommon.SoundPlayer;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -31,13 +32,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.teamcode.Storage;
-import org.firstinspires.ftc.teamcode.opmodes.auto.PathAuto;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 import com.acmerobotics.dashboard.FtcDashboard;
 
-import java.lang.annotation.Annotation;
 import java.util.LinkedList;
 
 
@@ -103,7 +101,8 @@ public class MainControl extends OpMode {
         telemetry.update();
         Drawing.init();
 
-        follower.setStartingPose(Storage.ORIENTPOSE == null? new Pose(0, 0, 0): Storage.ORIENTPOSE);
+        follower.setStartingPose(/*Storage.ORIENTPOSE == null?*/ new Pose(0, 0, 0)/*: Storage.ORIENTPOSE*/);
+
         //offset = -Storage.ORIENTPOSE.getHeading();
 
         //odometry1.setOffsets(-84.0, -168.0, DistanceUnit.MM); // T U N E   T H E S E
@@ -161,28 +160,6 @@ public class MainControl extends OpMode {
         telemetry.addLine(String.valueOf(RobotContainer.FLYWHEEL.getSpeed1()));
         telemetry.clear();
 
-        /*
-        if (gamepad1.dpad_right) {
-            if (canright) {
-                canright=false;
-                flywheelSpeed += 100;
-            }
-        } else canright = true;
-        if (gamepad1.dpad_left) {
-            if (canleft) {
-                canleft = false;
-                flywheelSpeed -= 100;
-            }
-        } else canleft = true;
-        if (gamepad1.dpadUpWasPressed()) {
-            testp += 5.;
-            RobotContainer.FLYWHEEL.testp(testp);
-        }
-        if (gamepad1.dpadDownWasPressed()) {
-            testp -= 5.;
-            RobotContainer.FLYWHEEL.testp(testp);
-        }
-         */
 
         dash.sendTelemetryPacket(packet);
 //        gate.setPosition(gamepad1.right_trigger);
@@ -275,29 +252,92 @@ public class MainControl extends OpMode {
     PIDController headingController = new PIDController(1, 0, 0.1);
     boolean square = false;
     boolean toGo = false;
+
+    public static final Pose BLUE_PARKING = new Pose(105d+2-3, 33d+.25, Math.toRadians(90));
     private void updateDrive() {
-        if (gamepad1.square && !square) {
+        double v = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144 - 6 - follower.getPose().getY(),144 - 6 - follower.getPose().getX())-follower.getHeading()));
+        if (gamepad1.squareWasPressed()) {
+            follower.holdPoint(BLUE_PARKING);
             square = true;
-            toGo = !toGo;
+            Log.i("20311", "SQUARE ON due to SQUARE WAS PRESSED");
         }
 
-        double v = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144 - 6 - follower.getPose().getY(),144 - 6 - follower.getPose().getX())-follower.getHeading()));
-        if (!(Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01 || gamepad1.right_trigger > 0.1)) {
-            if (shouldSetHoldPointInitial) {
-                holdTimeout.reset();
-                lastHeading = follower.getVelocity().getTheta();
-                shouldSetHoldPointInitial = false;
-                follower.holdPoint(toGo?new Pose(105d+2, 33d+.25):follower.getPose());
-            } else if ((holdTimeout.seconds() > 0.2) && shouldSetHoldPointSecondary) {
-                shouldSetHoldPointSecondary = false;
-                follower.holdPoint(toGo?new Pose(105d+2, 33d+.25):follower.getPose());
-                aprilState = AprilState.SAMPLE_TAGS;
+        if (gamepad1.squareWasReleased()) {
+            follower.startTeleopDrive(true);
+            square = false;
+            Log.i("20311", "SQUARE OFF due to SQUARE WAS RELEASED");
+        }
+
+        if (Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01 || gamepad1.right_trigger > 0.1) {
+            square = false;
+            Log.i("20311", "SQUARE OFF due to STICK MOVEMENT");
+        }
+
+        telemetry.addData("Square On", square);
+
+        if (!square) {
+            telemetry.addData("Can Drive", (Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01 || gamepad1.right_trigger > 0.1));
+            telemetry.addData("left stick y", gamepad1.left_stick_y);
+            telemetry.addData("left stick x", gamepad1.left_stick_x);
+            if (Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01 || gamepad1.right_trigger > 0.1) {
+                aprilState = AprilState.READY;
+                if (!shouldSetHoldPointInitial) follower.startTeleopDrive(true);
+                telemetry.addLine("Driving!");
+                follower.setTeleOpDrive(gamepad1.left_stick_y, gamepad1.left_stick_x,
+                 gamepad1.right_trigger > 0.1 ? v : -gamepad1.right_stick_x/*-gamepad1
+                 .right_stick_x*/, false, offset);
+                shouldSetHoldPointInitial = shouldSetHoldPointSecondary = true;
+            } else {
+                if (shouldSetHoldPointInitial) {
+                    holdTimeout.reset();
+                    lastHeading = follower.getVelocity().getTheta();
+                    shouldSetHoldPointInitial = false;
+                    follower.holdPoint(follower.getPose());
+                } else if ((holdTimeout.seconds() > 0.2) && shouldSetHoldPointSecondary) {
+                    shouldSetHoldPointSecondary = false;
+                    follower.holdPoint(follower.getPose());
+                    aprilState = AprilState.SAMPLE_TAGS;
+                }
+            }
+
+            if (gamepad1.dpad_right) {
+                if (canright) {
+                    canright=false;
+                    flywheelSpeed += 100;
+                }
+            } else canright = true;
+            if (gamepad1.dpad_left) {
+                if (canleft) {
+                    canleft = false;
+                    flywheelSpeed -= 100;
+                }
+            } else canleft = true;
+            if (gamepad1.dpadUpWasPressed()) {
+                flywheelSpeed += 20;
+            }
+            if (gamepad1.dpadDownWasPressed()) {
+                flywheelSpeed -= 20;
             }
         } else {
-            aprilState = AprilState.READY;
-            if (!shouldSetHoldPointInitial) follower.startTeleopDrive(true);
-            follower.setTeleOpDrive(gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_trigger > 0.1? v: -gamepad1.right_stick_x/*-gamepad1.right_stick_x*/, false, offset);
-            shouldSetHoldPointInitial = shouldSetHoldPointSecondary = true;
+            if (gamepad1.dpadRightWasPressed()) {
+                follower.setPose(follower.getPose().withY(follower.getPose().getY() + 0.2));
+                follower.holdPoint(BLUE_PARKING);
+            }
+
+            if (gamepad1.dpadLeftWasPressed()) {
+                follower.setPose(follower.getPose().withY(follower.getPose().getY() - 0.2));
+                follower.holdPoint(BLUE_PARKING);
+            }
+
+            if (gamepad1.dpadDownWasPressed()) {
+                follower.setPose(follower.getPose().withX(follower.getPose().getX() + 0.2));
+                follower.holdPoint(BLUE_PARKING);
+            }
+
+            if (gamepad1.dpadUpWasPressed()) {
+                follower.setPose(follower.getPose().withX(follower.getPose().getX() - 0.2));
+                follower.holdPoint(BLUE_PARKING);
+            }
         }
         switch (aprilState) {
             case READY:
@@ -309,6 +349,7 @@ public class MainControl extends OpMode {
                 samples.clear();
                 aprilState = AprilState.SAMPLE_TAGS_2;
             case SAMPLE_TAGS_2: /// Get apriltag samples
+
                 if (true || elapsedTime.seconds() > 0.3) {
                     elapsedTime.reset();
                     aprilState = AprilState.SAMPLE_TAGS_3;
