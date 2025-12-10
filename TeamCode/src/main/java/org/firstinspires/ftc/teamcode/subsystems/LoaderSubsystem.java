@@ -41,13 +41,13 @@ public class LoaderSubsystem {
         return (
                this.state != LoaderState.LAUNCH_INJECT
             && this.state != LoaderState.LAUNCH_RELOAD
-            && this.state != LoaderState.LAUNCH_WAIT_RELOAD_FINISH
-            && this.state != LoaderState.LAUNCH_INJECT_NEXT
-            && this.state != LoaderState.LAUNCH_WAIT_NEXT_REALOD
+//            && this.state != LoaderState.LAUNCH_WAIT_RELOAD_FINISH
+//            && this.state != LoaderState.LAUNCH_INJECT_NEXT
+//            && this.state != LoaderState.LAUNCH_WAIT_NEXT_REALOD
+//            && this.state != LoaderState.WAIT_THEN_REGRESS_TRANSFER
+//            && this.state != LoaderState.WAIT_REGRESS_THEN_OPEN_GATE
             && this.state != LoaderState.INTAKING
-            && this.state != LoaderState.WAIT_FOR_STOP_THEN_REGRESS_INTAKE
-            && this.state != LoaderState.WAIT_THEN_REGRESS_TRANSFER
-            && this.state != LoaderState.WAIT_REGRESS_THEN_OPEN_GATE);
+            && this.state != LoaderState.WAIT_FOR_STOP_THEN_REGRESS_INTAKE);
     }
 
     private enum LoaderState {
@@ -327,28 +327,28 @@ public class LoaderSubsystem {
                     }
                 }
                 break;
-            case LAUNCH_INJECT_NEXT:
-                transfer.setTargetPosition(transfer.getCurrentPosition() + (int)(537 * 1.1));
-                transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                intake.setTargetPosition(intake.getCurrentPosition() + (int)(145 * 1.1));
-                intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                elapsedTime.reset();
-                isFlywheelStableGate.reset();
-                Log.i("20311", "Shots = "+shots);
-                state = LoaderState.LAUNCH_WAIT_NEXT_REALOD;
-                break;
-            case LAUNCH_WAIT_NEXT_REALOD:
-                isFlywheelStableGate.update();
-                if (elapsedTime.seconds() > 0.70) {
-                    shots += 1;
-                    if (isFlywheelStableGate.trueForAtLeast(0.2)) { // 0.40
-                        state = LoaderState.LAUNCH_INJECT_NEXT;
-                    }
-                    if (request != LoaderState.LAUNCH || flywheelSubsystem.isSpeedChangeRequested()) {
-                        state = LoaderState.READY;
-                    }
-                }
-                break;
+//            case LAUNCH_INJECT_NEXT:
+//                transfer.setTargetPosition(transfer.getCurrentPosition() + (int)(537 * 1.1));
+//                transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                intake.setTargetPosition(intake.getCurrentPosition() + (int)(145 * 1.1));
+//                intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                elapsedTime.reset();
+//                isFlywheelStableGate.reset();
+//                Log.i("20311", "Shots = "+shots);
+//                state = LoaderState.LAUNCH_WAIT_NEXT_REALOD;
+//                break;
+//            case LAUNCH_WAIT_NEXT_REALOD:
+//                isFlywheelStableGate.update();
+//                if (elapsedTime.seconds() > 0.70) {
+//                    shots += 1;
+//                    if (isFlywheelStableGate.trueForAtLeast(0.2)) { // 0.40
+//                        state = LoaderState.LAUNCH_INJECT_NEXT;
+//                    }
+//                    if (request != LoaderState.LAUNCH || flywheelSubsystem.isSpeedChangeRequested()) {
+//                        state = LoaderState.READY;
+//                    }
+//                }
+//                break;
             default:
                 telemetry.addData("Invalid state!", state.name());
         }

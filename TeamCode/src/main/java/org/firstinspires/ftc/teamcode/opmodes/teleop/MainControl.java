@@ -6,8 +6,6 @@ import static java.lang.StrictMath.max;
 
 import android.util.Log;
 
-import androidx.annotation.Nullable;
-
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.field.FieldManager;
@@ -40,7 +38,6 @@ import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 import com.acmerobotics.dashboard.FtcDashboard;
 
 import java.util.LinkedList;
-import java.util.List;
 
 
 @TeleOp//(name = "***FTC OpMode 2", group = "TeleOp")
@@ -266,7 +263,7 @@ public class MainControl extends OpMode {
 
     public static final Pose BLUE_PARKING = new Pose(105d+2-3, 33d+.25, Math.toRadians(90));
     private void updateDrive() {
-        double v = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144 - 12 - follower.getPose().getY(),144 - 12 - follower.getPose().getX())-follower.getHeading()));
+        double v = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144-9 - follower.getPose().getY(),144-9 - follower.getPose().getX())-follower.getHeading()));
         if (gamepad1.squareWasPressed()) {
             follower.holdPoint(BLUE_PARKING);
             square = true;
@@ -284,16 +281,16 @@ public class MainControl extends OpMode {
             Log.i("20311", "SQUARE OFF due to STICK MOVEMENT");
         }
 
-        telemetry.addData("Square On", square);
+        //telemetry.addData("Square On", square);
 
         if (!square) {
-            telemetry.addData("Can Drive", (Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01 || gamepad1.right_trigger > 0.1));
-            telemetry.addData("left stick y", gamepad1.left_stick_y);
-            telemetry.addData("left stick x", gamepad1.left_stick_x);
+            //telemetry.addData("Can Drive", (Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01 || gamepad1.right_trigger > 0.1));
+            //telemetry.addData("left stick y", gamepad1.left_stick_y);
+            //telemetry.addData("left stick x", gamepad1.left_stick_x);
             if (Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01 || gamepad1.right_trigger > 0.1) {
                 aprilState = AprilState.READY;
                 if (!shouldSetHoldPointInitial) follower.startTeleopDrive(true);
-                telemetry.addLine("Driving!");
+                //telemetry.addLine("Driving!");
                 follower.setTeleOpDrive(gamepad1.left_stick_y, gamepad1.left_stick_x,
                  gamepad1.right_trigger > 0.1 ? v : -gamepad1.right_stick_x/*-gamepad1
                  .right_stick_x*/, false, offset);
@@ -374,13 +371,17 @@ public class MainControl extends OpMode {
                 }
                 else break;
         }
-        telemetry.addData("toGo", toGo);
-        telemetry.addData("joyX", gamepad1.left_stick_x);
-        telemetry.addData("joyY", gamepad1.left_stick_y);
-        telemetry.addData("spin", gamepad1.right_stick_x);
-        telemetry.addData("shouldHold", shouldSetHoldPointInitial);
-        telemetry.addData("velocity", follower.getVelocity().getMagnitude() < 0.1);
-        telemetry.addData("joystickIsSwizzle", !(Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01));
+        //telemetry.addData("toGo", toGo);
+        //telemetry.addData("joyX", gamepad1.left_stick_x);
+        //telemetry.addData("joyY", gamepad1.left_stick_y);
+        //telemetry.addData("spin", gamepad1.right_stick_x);
+        //telemetry.addData("shouldHold", shouldSetHoldPointInitial);
+        //telemetry.addData("velocity", follower.getVelocity().getMagnitude() < 0.1);
+        //telemetry.addData("joystickIsSwizzle", !(Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01));
+        if(distanceIndex >-1) {
+            telemetry.addLine("calculated flywheel speed: "+ calculatedFlywheel +"@" + distanceToTarget);
+            telemetry.addLine("using range "+ KNOWN_TARGET_SPEEDS[distanceIndex]+"@"+ KNOWN_TARGET_DISTANCES[distanceIndex]+" and "+ KNOWN_TARGET_SPEEDS[distanceIndex +1]+"@"+ KNOWN_TARGET_DISTANCES[distanceIndex +1]);
+        }
         follower.update();
     }
 
@@ -405,28 +406,29 @@ public class MainControl extends OpMode {
     }
     // 2800 2400
 
-    private static final Pose GOAL_POSE = new Pose(144-12, 144-12);
+    private static final Pose GOAL_POSE = new Pose(144-9, 144-9);
 
     private double getDistanceToFlywheel () {
         return follower.getPose().distanceFrom(GOAL_POSE) - (1d/2d * 17.2);
     }
 
+    double calculatedFlywheel;
+    int distanceIndex =-1;
+    double distanceToTarget;
+    final int[] KNOWN_TARGET_DISTANCES = {  18,   20,   24,   44,   60,   76,   90,  103,  108,  117,  137};
+    final int[] KNOWN_TARGET_SPEEDS =    {2370, 2360, 2290, 2440, 2620, 2760, 2910, 3060, 3160, 3300, 3500};
     private void spinByDistance (String note) {
-        double distance = getDistanceToFlywheel();
-        int[] distances = {18, 20, 24, 44, 60, 76, 90, 103, 108, 117};
-        int[] averages  = {2370, 2360, 2290, 2440, 2620, 2760, 2910, 3090, 3180, 3300};
-        for (int i = 0; i < distances.length - 1; ++i) {
-            if (distance > distances[i]) {
-                double requestSpeed = (distance - distances[i]) / (distances[i + 1] - distances[i]) * (averages[i] - averages[i + 1]) + averages[i + 1];
-                RobotContainer.FLYWHEEL.setRequested(requestSpeed, "spinByDistance");
-                telemetry.addData("actual requested speed", requestSpeed);
+        distanceToTarget = getDistanceToFlywheel();
+        for (int i = 0; i < KNOWN_TARGET_DISTANCES.length - 1; ++i) {
+            if (distanceToTarget > KNOWN_TARGET_DISTANCES[i]) {
+                distanceIndex =i;
             }
         }
-        Log.w("20311", "from `MainControl::spinByDistance`: Out of bounds request with note " + note);
-
-
-        telemetry.addData("distance", distance);
-        telemetry.addData("Warning", "Out of bounds request");
+        if(distanceIndex >-1) {
+            calculatedFlywheel = (distanceToTarget - KNOWN_TARGET_DISTANCES[distanceIndex]) / (KNOWN_TARGET_DISTANCES[distanceIndex + 1] - KNOWN_TARGET_DISTANCES[distanceIndex]) * (KNOWN_TARGET_SPEEDS[distanceIndex] - KNOWN_TARGET_SPEEDS[distanceIndex + 1]) + KNOWN_TARGET_SPEEDS[distanceIndex + 1];
+            RobotContainer.FLYWHEEL.setRequested(calculatedFlywheel, "spinByDistance");
+            Log.w("20311", "from `MainControl::spinByDistance`: Out of bounds request with note " + note);
+        }
     }
 
     private void spinDown(String note) {

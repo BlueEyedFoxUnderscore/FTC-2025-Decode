@@ -16,7 +16,7 @@ public class FlywheelSubsystem {
 
     private final Telemetry telemetry;
     private final DcMotorEx shooter1, shooter2;
-    private BooleanSupplier isLoaderReadyToShootSupplier;
+    private BooleanSupplier isLoaderPermittingSpeedChanges;
     /**
      * The current requested speed to be used on invocation of update()
      */
@@ -51,7 +51,7 @@ public class FlywheelSubsystem {
         shooter2.setVelocityPIDFCoefficients(p, 0, 0, fCoeff);
     }
     public void setReady(BooleanSupplier ready) {
-        isLoaderReadyToShootSupplier = ready;
+        isLoaderPermittingSpeedChanges = ready;
     }
 
     /**
@@ -64,10 +64,10 @@ public class FlywheelSubsystem {
     /**
      * Updates the speed with respect to the current requested speed.
      */
-     public boolean isSpeedChangeRequested() {return priorspeed!=speed;}
+     public boolean isSpeedChangeRequested() {return priorspeed!=speed && speed!=0.0;}
     double priorspeed=0;
     public void update() {
-        if (isLoaderReadyToShootSupplier.getAsBoolean()) {
+        if (isLoaderPermittingSpeedChanges.getAsBoolean()) {
             if(priorspeed != speed) {
             	priorspeed=speed;
             	Log.i("20311", "Speed was actually set to "+speed);
