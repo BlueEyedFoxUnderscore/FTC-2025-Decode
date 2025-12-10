@@ -249,13 +249,13 @@ public class MainControl extends OpMode {
     ElapsedTime holdTimeout = new ElapsedTime();
     double lastHeading = 0;
 
-    PIDController headingController = new PIDController(1, 0, 0.1);
+    PIDController headingController = new PIDController(1.5, 0, 0.1);
     boolean square = false;
     boolean toGo = false;
 
     public static final Pose BLUE_PARKING = new Pose(105d+2-3, 33d+.25, Math.toRadians(90));
     private void updateDrive() {
-        double v = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144 - 6 - follower.getPose().getY(),144 - 6 - follower.getPose().getX())-follower.getHeading()));
+        double v = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144 - 12 - follower.getPose().getY(),144 - 12 - follower.getPose().getX())-follower.getHeading()));
         if (gamepad1.squareWasPressed()) {
             follower.holdPoint(BLUE_PARKING);
             square = true;
@@ -358,7 +358,6 @@ public class MainControl extends OpMode {
             case SAMPLE_TAGS_3: /// Get apriltag samples
                 addSampleIfAvailable(samples);
                 if (samples.size() >= 8) {
-                    aprilState = AprilState.SAMPLE_TAGS_4;
                     SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                     Pose average = getAverageOfBest(samples, 5);
                     follower.setPose(average);

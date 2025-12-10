@@ -125,6 +125,7 @@ public class LoaderSubsystem {
 
 
     private int shots = 0;
+    final private double INTAKE_IDLE_POWER=0.2;
 
     /**
      * Constructs a new Flywheel object using all the different required motors.
@@ -148,7 +149,7 @@ public class LoaderSubsystem {
         intake.setPositionPIDFCoefficients(10);
         intake.setTargetPosition(intake.getCurrentPosition());
         intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intake.setPower(0.15);
+        intake.setPower(INTAKE_IDLE_POWER);
         // test Intake pid
         // intake.setTargetPosition(intake.getCurrentPosition());
         // intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -197,7 +198,7 @@ public class LoaderSubsystem {
         if (firstRun) {
             firstRun = false;
             intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            intake.setPower(0.15);
+            intake.setPower(INTAKE_IDLE_POWER);
         }
         if (gamepad1 != null) {
             if (gamepad1.dpadUpWasPressed()) {
@@ -238,7 +239,7 @@ public class LoaderSubsystem {
                     intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     intake.setPower(0.8);
-                    transfer.setPower(0.3);
+                    transfer.setPower(0.2);
                 }
                 break;
             case INTAKING:
@@ -250,29 +251,33 @@ public class LoaderSubsystem {
                 }
                 break;
             case WAIT_FOR_STOP_THEN_REGRESS_INTAKE:
-                if (elapsedTime.seconds() > .05) {
-                    intake.setTargetPosition(intake.getCurrentPosition() - (int)(145.0 * (.1))); //0.25
-                    intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    intake.setPower(1);
-                    elapsedTime.reset();
-                    state = LoaderState.WAIT_THEN_REGRESS_TRANSFER;
+                if (elapsedTime.seconds() > .00) {
+//                    intake.setTargetPosition(intake.getCurrentPosition() - (int)(145.0 * (.1))); //0.25
+//                    intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                    intake.setPower(1);
+//                    elapsedTime.reset();
+//                    state = LoaderState.WAIT_THEN_REGRESS_TRANSFER;
+                    transfer.setTargetPosition(transfer.getCurrentPosition() - (int)(537.0 * (.2)));
+                    transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    transfer.setPower(1);
+                    intake.setPower(INTAKE_IDLE_POWER);
+                    intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    intake.setPower(INTAKE_IDLE_POWER);
+                    gate.open();
+                    state = LoaderState.REGRESS_GATE_WAIT_STABLE;
                 }
                 break;
             case WAIT_THEN_REGRESS_TRANSFER:
                 if (elapsedTime.seconds() > .2) {
-                    transfer.setTargetPosition(transfer.getCurrentPosition() - (int)(537.0 * (.1)));
-                    transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    transfer.setPower(1);
-                    state = LoaderState.WAIT_REGRESS_THEN_OPEN_GATE;
                 }
                 break;
             case WAIT_REGRESS_THEN_OPEN_GATE:
                 if (elapsedTime.seconds() > .6) {
                     gate.open();
                     state = LoaderState.REGRESS_GATE_WAIT_STABLE;
-                    intake.setPower(0.15);
+                    intake.setPower(INTAKE_IDLE_POWER);
                     intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    intake.setPower(0.15);
+                    intake.setPower(INTAKE_IDLE_POWER);
                 }
                 break;
             case REGRESS_GATE_WAIT_STABLE:
@@ -286,7 +291,7 @@ public class LoaderSubsystem {
                 // Only so we can spin up the flywheel is this state needed
             case LAUNCH_WAIT_FLYWHEEL:
                 isFlywheelStableGate.update();
-                if (isFlywheelStableGate.trueForAtLeast(0.2)) state = LoaderState.LAUNCH_INJECT;
+                if (isFlywheelStableGate.trueForAtLeast(0.1)) state = LoaderState.LAUNCH_INJECT;
                 if (request != LoaderState.LAUNCH || flywheelSubsystem.isSpeedChangeRequested()) state = LoaderState.READY;
                 break;
             case LAUNCH_INJECT:
@@ -301,11 +306,11 @@ public class LoaderSubsystem {
             case LAUNCH_RELOAD:
                 if (elapsedTime.seconds() > 0.2) { // 0.20
                     shots += 1;
-                    transfer.setTargetPosition(transfer.getCurrentPosition() + (int) (537 * 1.));
+                    transfer.setTargetPosition(transfer.getCurrentPosition() + (int) (537 * 1.1));
                     transfer.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    intake.setTargetPosition(intake.getCurrentPosition() + (int) (145 * 1.));
-                    intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     transfer.setPower(1);
+                    intake.setTargetPosition(intake.getCurrentPosition() + (int) (145 * 1.1));
+                    intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     intake.setPower(1);
                     elapsedTime.reset();
                     state = LoaderState.LAUNCH_WAIT_RELOAD_FINISH;
@@ -316,7 +321,7 @@ public class LoaderSubsystem {
             case LAUNCH_WAIT_RELOAD_FINISH:
                 isFlywheelStableGate.update();
                 if (elapsedTime.seconds() > 0.2) { // 0.20
-                    if (isFlywheelStableGate.trueForAtLeast(0.2)) state = LoaderState.LAUNCH_INJECT;
+                    if (isFlywheelStableGate.trueForAtLeast(0.1)) state = LoaderState.LAUNCH_INJECT;
                     if (request != LoaderState.LAUNCH || flywheelSubsystem.isSpeedChangeRequested()) {
                         state = LoaderState.READY;
                     }

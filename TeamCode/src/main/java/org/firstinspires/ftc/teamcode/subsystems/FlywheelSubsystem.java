@@ -27,25 +27,26 @@ public class FlywheelSubsystem {
      * @param shooter1 First flywheel motor. Interchangeable with shooter2.
      * @param shooter2 Second flywheel motor. Interchangeable with shooter1.
      */
+    final double fCoeff = 14.9244385071*1.01; // 16.072472238457042;
+    private int stabilityThreshold = 80;
     public FlywheelSubsystem(@NonNull DcMotorEx shooter1, @NonNull DcMotorEx shooter2, @NonNull Telemetry telemetry) {
         this.shooter1 = shooter1;
         this.shooter2 = shooter2;
         this.telemetry = telemetry;
 
 
-        final double fCoeff = 14.9244385071*1.01; // 16.072472238457042;
         shooter1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter1.setDirection(DcMotorSimple.Direction.REVERSE);
         shooter2.setDirection(DcMotorSimple.Direction.REVERSE);
-        shooter1.setVelocityPIDFCoefficients(85, 0, 0, fCoeff);
-        shooter2.setVelocityPIDFCoefficients(85, 0, 0, fCoeff);
+        shooter1.setVelocityPIDFCoefficients(85, .15, 0, fCoeff);
+        shooter2.setVelocityPIDFCoefficients(85, .15, 0, fCoeff);
         shooter1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
+
     public void testp(double p)
     {
-        final double fCoeff = 14.9244385071; // 16.072472238457042;
         shooter1.setVelocityPIDFCoefficients(p, 0, 0, fCoeff);
         shooter2.setVelocityPIDFCoefficients(p, 0, 0, fCoeff);
     }
@@ -149,8 +150,6 @@ public class FlywheelSubsystem {
     public double getSpeed2() {
         return toRPM(shooter2.getVelocity());
     }
-
-    private int stabilityThreshold = 60;
 
     /**
      * Function to return whether the motor has stabilized (reached the target velocity)

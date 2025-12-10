@@ -76,14 +76,14 @@ public class RedAuto {
         final Pose PGP_APPROACH_CONTROL_POINT_POSE = new Pose(85.0212765957447, 60);
         final Pose PGP_ROW_HEAD_POSE = new Pose(94, 60).withHeading(Math.toRadians(0));
         final Pose PGP_ROW_TAIL_POSE = new Pose(121.547, 60).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_EXIT_POSE = new Pose(110.586, 60).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_EXIT_CONTROL_POINT = new Pose( 94, 60);
+        final Pose PGP_ROW_EXIT_POSE = new Pose(106, 60).withHeading(Math.toRadians(0));
+        final Pose PGP_ROW_EXIT_CONTROL_POINT = new Pose( 71, 72);
 
-        final Pose GPP_APPROACH_CONTROL_POINT_POSE = new Pose(82, 36);
-        final Pose GPP_ROW_HEAD_POSE = new Pose(94, 36).withHeading(Math.toRadians(0));
+        final Pose GPP_APPROACH_CONTROL_POINT_POSE = new Pose(80, 36);
+        final Pose GPP_ROW_HEAD_POSE = new Pose(92, 36).withHeading(Math.toRadians(0));
         final Pose GPP_ROW_TAIL_POSE = new Pose(121.210, 36).withHeading(Math.toRadians(0));
-        final Pose GPP_ROW_EXIT_POSE = new Pose(110.586, 36).withHeading(Math.toRadians(0));
-        final Pose GPP_ROW_EXIT_CONTROL_POINT = new Pose( 94, 36);
+        final Pose GPP_ROW_EXIT_POSE = new Pose(106, 36).withHeading(Math.toRadians(0));
+        final Pose GPP_ROW_EXIT_CONTROL_POINT = new Pose( 73, 48);
 
         START_EJECT_SORT_AUTO = follower.pathBuilder()
                 .addPath(stayAt(START_PARALLEL_TO_GOAL_POSE))
@@ -318,7 +318,7 @@ public class RedAuto {
                     .setLinearHeadingInterpolation(PPG_ROW_TAIL_POSE.getHeading(), SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, () -> auto.setFollowerMaxPower(1))
                 .addPath(stayAt(SHOOTING_POSE))
-                    .addParametricCallback(0, RobotContainer.LOADER::cancelIntake)
+                    .addParametricCallback(.95, RobotContainer.LOADER::cancelIntake)
                     .addParametricCallback(0, () -> auto.spinUp("COLLECT_PPG_ROW"))
                     .addParametricCallback(0, () -> auto.setRunAtEnd(() -> follower.followPath(afterCollectPPG.get()), "Start path "+afterCollectPPG.get()+" after COLLECT_PPG_ROW" ))
                 .build();
@@ -333,9 +333,9 @@ public class RedAuto {
                     .addParametricCallback(0, () -> auto.setFollowerMaxPower(PICKUP_SPEED))
                 .addPath(new BezierLine(PGP_ROW_TAIL_POSE, PGP_ROW_EXIT_POSE))
                     .setLinearHeadingInterpolation(PGP_ROW_TAIL_POSE.getHeading(), PGP_ROW_EXIT_POSE.getHeading())
+                    .addParametricCallback(0, () -> auto.setFollowerMaxPower(1))
                 .addPath(new BezierCurve(PGP_ROW_EXIT_POSE, PGP_ROW_EXIT_CONTROL_POINT, SHOOTING_POSE))
                     .setLinearHeadingInterpolation(PGP_ROW_EXIT_POSE.getHeading(), SHOOTING_POSE.getHeading())
-                    .addParametricCallback(0, () -> auto.setFollowerMaxPower(1))
                     .addParametricCallback(0.0, () -> auto.setNextPath(afterCollectPGP.get(), "afterCollectGroup2.get() from COLLECT_GROUP_2"))
                     .addParametricCallback(0.0, () -> auto.setRunAtEnd(() -> auto.startNextPath("at end of COLLECT_GROUP_2"), "auto::startNextPath from COLLECT_GROUP_2"))
                     .addParametricCallback(0.0, RobotContainer.LOADER::cancelIntake)

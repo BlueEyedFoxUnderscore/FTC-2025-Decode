@@ -26,7 +26,7 @@ public class Constants {
             //HEADING
             .useSecondaryHeadingPIDF(true)
             /* far*/.headingPIDFCoefficients(new PIDFCoefficients(2.0d, 0.0d, 0.0d, 0.0d))
-            /*near*/.secondaryHeadingPIDFCoefficients(new PIDFCoefficients(0.7d, 0.0d, 0.05d, 0.07d)) // d=.12 was the decel, but causes jumps from small changes
+            /*near*/.secondaryHeadingPIDFCoefficients(new PIDFCoefficients(1.0d, 0.0d, 0.06d, 0.07d)) // d=.12 was the decel, but causes jumps from small changes
             .headingPIDFSwitch(40.0d*(Math.PI/180.0d))
             //DRIVE
             .useSecondaryDrivePIDF(true)
