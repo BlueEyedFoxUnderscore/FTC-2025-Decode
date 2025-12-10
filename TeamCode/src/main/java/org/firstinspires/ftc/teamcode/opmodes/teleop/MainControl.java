@@ -418,7 +418,7 @@ public class MainControl extends OpMode {
         for (int i = 0; i < distances.length - 1; ++i) {
             if (distance > distances[i]) {
                 double requestSpeed = (distance - distances[i]) / (distances[i + 1] - distances[i]) * (averages[i] - averages[i + 1]) + averages[i + 1];
-                RobotContainer.FLYWHEEL.setRequested(requestSpeed, "fuck");
+                RobotContainer.FLYWHEEL.setRequested(requestSpeed, "spinByDistance");
                 telemetry.addData("actual requested speed", requestSpeed);
             }
         }
