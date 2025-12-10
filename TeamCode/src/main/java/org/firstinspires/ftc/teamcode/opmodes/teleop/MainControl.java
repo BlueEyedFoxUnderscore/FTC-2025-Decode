@@ -6,6 +6,8 @@ import static java.lang.StrictMath.max;
 
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.field.FieldManager;
@@ -21,6 +23,7 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.PoseHistory;
 import com.qualcomm.ftccommon.SoundPlayer;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -37,6 +40,7 @@ import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 import com.acmerobotics.dashboard.FtcDashboard;
 
 import java.util.LinkedList;
+import java.util.List;
 
 
 @TeleOp//(name = "***FTC OpMode 2", group = "TeleOp")
@@ -177,9 +181,16 @@ public class MainControl extends OpMode {
     private Limelight3A camera;
     private static final double INCHES_PER_METER = 39.3701;
 
+    private boolean resultIsValid(LLResult result) {
+        for (LLResultTypes.FiducialResult results: result.getFiducialResults()) {
+            if (!(results.getFiducialId() == 20 || results.getFiducialId() == 24)) return false;
+        }
+        return true;
+    }
+
     private void addSampleIfAvailable(LinkedList<Pose> poses) {
         LLResult result = camera.getLatestResult();
-        if (result.isValid() && result.getTimestamp() != lastSample) {
+        if (!result.getFiducialResults().isEmpty()) if (result.isValid() && result.getTimestamp() != lastSample && resultIsValid(result)) {
             lastSample = result.getTimestamp();
             Pose3D botpose = result.getBotpose();
             Position position = botpose.getPosition();
@@ -349,11 +360,8 @@ public class MainControl extends OpMode {
                 samples.clear();
                 aprilState = AprilState.SAMPLE_TAGS_2;
             case SAMPLE_TAGS_2: /// Get apriltag samples
-
-                if (true || elapsedTime.seconds() > 0.3) {
-                    elapsedTime.reset();
-                    aprilState = AprilState.SAMPLE_TAGS_3;
-                }
+                elapsedTime.reset();
+                aprilState = AprilState.SAMPLE_TAGS_3;
                 break;
             case SAMPLE_TAGS_3: /// Get apriltag samples
                 addSampleIfAvailable(samples);
@@ -393,7 +401,32 @@ public class MainControl extends OpMode {
     }
 
     private void spinUp(String note) {
-        RobotContainer.FLYWHEEL.setRequested(flywheelSpeed, note); // 2800 2400
+        RobotContainer.FLYWHEEL.setRequested(flywheelSpeed, note);
+    }
+    // 2800 2400
+
+    private static final Pose GOAL_POSE = new Pose(144-12, 144-12);
+
+    private double getDistanceToFlywheel () {
+        return follower.getPose().distanceFrom(GOAL_POSE) - (1d/2d * 17.2);
+    }
+
+    private void spinByDistance (String note) {
+        double distance = getDistanceToFlywheel();
+        int[] distances = {18, 20, 24, 44, 60, 76, 90, 103, 108, 117};
+        int[] averages  = {2370, 2360, 2290, 2440, 2620, 2760, 2910, 3090, 3180, 3300};
+        for (int i = 0; i < distances.length - 1; ++i) {
+            if (distance > distances[i]) {
+                double requestSpeed = (distance - distances[i]) / (distances[i + 1] - distances[i]) * (averages[i] - averages[i + 1]) + averages[i + 1];
+                RobotContainer.FLYWHEEL.setRequested(requestSpeed, "fuck");
+                telemetry.addData("actual requested speed", requestSpeed);
+            }
+        }
+        Log.w("20311", "from `MainControl::spinByDistance`: Out of bounds request with note " + note);
+
+
+        telemetry.addData("distance", distance);
+        telemetry.addData("Warning", "Out of bounds request");
     }
 
     private void spinDown(String note) {
@@ -412,7 +445,7 @@ public class MainControl extends OpMode {
         if (gamepad1.right_bumper) intake();
         else cancelIntake();
         if (gamepad1.leftBumperWasPressed()) {
-            spinUp("Left bumper pressed");
+            spinByDistance("Left bumper pressed");
             launch();
         }
         if (gamepad1.leftBumperWasReleased()) {

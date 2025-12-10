@@ -39,8 +39,8 @@ public class FlywheelSubsystem {
         shooter2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter1.setDirection(DcMotorSimple.Direction.REVERSE);
         shooter2.setDirection(DcMotorSimple.Direction.REVERSE);
-        shooter1.setVelocityPIDFCoefficients(85, .15, 0, fCoeff);
-        shooter2.setVelocityPIDFCoefficients(85, .15, 0, fCoeff);
+        shooter1.setVelocityPIDFCoefficients(85, .10, 0, fCoeff);
+        shooter2.setVelocityPIDFCoefficients(85, .10, 0, fCoeff);
         shooter1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }

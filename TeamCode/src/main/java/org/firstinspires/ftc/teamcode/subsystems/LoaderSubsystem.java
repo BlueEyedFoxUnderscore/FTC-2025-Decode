@@ -291,7 +291,7 @@ public class LoaderSubsystem {
                 // Only so we can spin up the flywheel is this state needed
             case LAUNCH_WAIT_FLYWHEEL:
                 isFlywheelStableGate.update();
-                if (isFlywheelStableGate.trueForAtLeast(0.1)) state = LoaderState.LAUNCH_INJECT;
+                if (isFlywheelStableGate.trueForAtLeast(0.15)) state = LoaderState.LAUNCH_INJECT;
                 if (request != LoaderState.LAUNCH || flywheelSubsystem.isSpeedChangeRequested()) state = LoaderState.READY;
                 break;
             case LAUNCH_INJECT:
@@ -321,7 +321,7 @@ public class LoaderSubsystem {
             case LAUNCH_WAIT_RELOAD_FINISH:
                 isFlywheelStableGate.update();
                 if (elapsedTime.seconds() > 0.2) { // 0.20
-                    if (isFlywheelStableGate.trueForAtLeast(0.1)) state = LoaderState.LAUNCH_INJECT;
+                    if (isFlywheelStableGate.trueForAtLeast(0.15)) state = LoaderState.LAUNCH_INJECT;
                     if (request != LoaderState.LAUNCH || flywheelSubsystem.isSpeedChangeRequested()) {
                         state = LoaderState.READY;
                     }
