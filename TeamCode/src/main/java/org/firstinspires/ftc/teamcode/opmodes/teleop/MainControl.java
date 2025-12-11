@@ -448,8 +448,10 @@ public class MainControl extends OpMode {
     private void updateLoader() {
         if (gamepad1.right_bumper) intake();
         else cancelIntake();
-        if (gamepad1.leftBumperWasPressed()) {
-            spinByDistance("Left bumper pressed");
+        if (gamepad1.right_trigger > 0.1 | gamepad1.left_bumper) {
+            spinByDistance("Right trigger pressed");
+        }
+        if (gamepad1.left_bumper) {
             launch();
         }
         if (gamepad1.leftBumperWasReleased()) {
