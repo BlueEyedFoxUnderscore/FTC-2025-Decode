@@ -261,7 +261,8 @@ public class MainControl extends OpMode {
     boolean square = false;
     boolean toGo = false;
 
-    public static final Pose BLUE_PARKING = new Pose(105d+2-3, 33d+.25, Math.toRadians(90));
+    public static final Pose BLUE_PARKING = new Pose((72d+24d)+(18/2)+(18-16)-.5, (24d)+18d/2d, Math.toRadians(90));
+
     private void updateDrive() {
         double v = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144-9 - follower.getPose().getY(),144-9 - follower.getPose().getX())-follower.getHeading()));
         if (gamepad1.squareWasPressed()) {
