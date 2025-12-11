@@ -95,21 +95,23 @@ public class RedAuto {
         READ_TO_REORIENT = follower.pathBuilder()
                 .addPath(new BezierLine(START_PARALLEL_TO_GOAL_POSE, READ_OBELISK_POSE))
                     .setLinearHeadingInterpolation(START_PARALLEL_TO_GOAL_POSE.getHeading(), READ_OBELISK_POSE.getHeading())
+                    .addParametricCallback(0, () -> auto.setState(PathAuto.AutoState.GET_TAG_ID)) // start reading
                 .addPath(new BezierLine(READ_OBELISK_POSE, SHOOTING_POSE)) // to sort position)
                     .setLinearHeadingInterpolation(READ_OBELISK_POSE.getHeading(), SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, () -> auto.setState(PathAuto.AutoState.GET_TAG_ID)) // start reading
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
+                    .addParametricCallback(0, auto::reorient)
                     .addParametricCallback(0, () -> {
                             switch (auto.gamestate) {
                                 case GPP:
-                                    auto.setRunAtEnd(()->follower.followPath(GPP_EJECT_PATH_1), "GPP_EJECT_PATH_1 from REORIENT");
+                                    auto.setNextPath(GPP_EJECT_PATH_1, "GPP_EJECT_PATH_1 from REORIENT");
                                     break;
                                 case PGP:
-                                    auto.setRunAtEnd(()->follower.followPath(PGP_EJECT_PATH_1), "PGP_EJECT_PATH_1 from REORIENT");
+                                    auto.setNextPath(PGP_EJECT_PATH_1, "PGP_EJECT_PATH_1 from REORIENT");
                                     break;
                                 case PPG:
-                                    auto.setRunAtEnd(()->follower.followPath(PPG_EJECT_PATH_1), "PPG_EJECT_PATH_1 from REORIENT");
+                                    auto.setNextPath(PPG_EJECT_PATH_1, "PPG_EJECT_PATH_1 from REORIENT");
                                     break;
                                 default:
                             }

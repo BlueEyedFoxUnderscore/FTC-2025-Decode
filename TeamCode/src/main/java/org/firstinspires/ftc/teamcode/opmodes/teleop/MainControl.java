@@ -264,10 +264,11 @@ public class MainControl extends OpMode {
     public static final Pose BLUE_PARKING = new Pose((72d+24d)+(18/2)+(18-16)-.5, (24d)+18d/2d, Math.toRadians(90));
 
     private void updateDrive() {
-        double v = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144-9 - follower.getPose().getY(),144-9 - follower.getPose().getX())-follower.getHeading()));
+        double headingCorrection = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144-9 - follower.getPose().getY(),144-9 - follower.getPose().getX())-follower.getHeading()));
         if (gamepad1.squareWasPressed()) {
             follower.holdPoint(BLUE_PARKING);
             square = true;
+            aprilState = AprilState.READY;
             Log.i("20311", "SQUARE ON due to SQUARE WAS PRESSED");
         }
 
@@ -293,7 +294,7 @@ public class MainControl extends OpMode {
                 if (!shouldSetHoldPointInitial) follower.startTeleopDrive(true);
                 //telemetry.addLine("Driving!");
                 follower.setTeleOpDrive(gamepad1.left_stick_y, gamepad1.left_stick_x,
-                 gamepad1.right_trigger > 0.1 ? v : -gamepad1.right_stick_x/*-gamepad1
+                 gamepad1.right_trigger > 0.1 ? headingCorrection : -gamepad1.right_stick_x/*-gamepad1
                  .right_stick_x*/, false, offset);
                 shouldSetHoldPointInitial = shouldSetHoldPointSecondary = true;
             } else {
