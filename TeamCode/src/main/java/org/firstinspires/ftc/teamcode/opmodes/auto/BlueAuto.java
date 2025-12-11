@@ -13,7 +13,7 @@ import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class RedAuto {
+public class BlueAuto {
     public static PathChain START_EJECT_SORT_AUTO;
     public static PathChain PPG_EJECT_PATH_1;
     public static PathChain PPG_EJECT_PATH_1b;
@@ -62,28 +62,28 @@ public class RedAuto {
         AtomicReference<PathChain> afterCollectPGP = new AtomicReference<>();
         AtomicReference<PathChain> afterCollectGPP = new AtomicReference<>();
 
-        final Pose START_FACING_GOAL_POSE = new Pose(121.716, 124.080).withHeading(Math.toRadians(36));
+        final Pose START_FACING_GOAL_POSE = new Pose(144-121.716, 124.080).withHeading(Math.toRadians(180-36));
 
-        final Pose START_PARALLEL_TO_GOAL_POSE = new Pose(120.872, 126.443).withHeading(Math.toRadians(126));
-        final Pose READ_OBELISK_POSE = new Pose(/*86.603, 130.157,/**/ 101, 115).withHeading(Math.toRadians(135));
+        final Pose START_PARALLEL_TO_GOAL_POSE = new Pose(144-120.872, 126.443).withHeading(Math.toRadians(180-126));
+        final Pose READ_OBELISK_POSE = new Pose(144-/*86.603, 130.157,/**/ 101, 115).withHeading(Math.toRadians(180-135));
 
-        final Pose SHOOTING_POSE = new Pose(98, 98).withHeading(Math.toRadians(45));
+        final Pose SHOOTING_POSE = new Pose(144-98, 98).withHeading(Math.toRadians(180-45));
 
-        final Pose PPG_APPROACH_CONTROL_POINT_POSE = new Pose(90-2, 84);
-        final Pose PPG_ROW_HEAD_POSE = new Pose(94-2, 84).withHeading(Math.toRadians(0));
-        final Pose PPG_ROW_TAIL_POSE = new Pose(121 + 8, 84).withHeading(Math.toRadians(0));
+        final Pose PPG_APPROACH_CONTROL_POINT_POSE = new Pose(144-90-2, 84);
+        final Pose PPG_ROW_HEAD_POSE = new Pose(144-94-2, 84).withHeading(Math.toRadians(180-0));
+        final Pose PPG_ROW_TAIL_POSE = new Pose(144-121 + 8, 84).withHeading(Math.toRadians(180-0));
 
-        final Pose PGP_APPROACH_CONTROL_POINT_POSE = new Pose(85.0212765957447, 60);
-        final Pose PGP_ROW_HEAD_POSE = new Pose(94, 60).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_TAIL_POSE = new Pose(121.547 + 8, 60).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_EXIT_POSE = new Pose(106, 60).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_EXIT_CONTROL_POINT = new Pose( 71, 72);
+        final Pose PGP_APPROACH_CONTROL_POINT_POSE = new Pose(144-85.0212765957447, 60);
+        final Pose PGP_ROW_HEAD_POSE = new Pose(144-94, 60).withHeading(Math.toRadians(180-0));
+        final Pose PGP_ROW_TAIL_POSE = new Pose(144-121.547 + 8, 60).withHeading(Math.toRadians(180-0));
+        final Pose PGP_ROW_EXIT_POSE = new Pose(144-106, 60).withHeading(Math.toRadians(180-0));
+        final Pose PGP_ROW_EXIT_CONTROL_POINT = new Pose(144- 71, 72);
 
-        final Pose GPP_APPROACH_CONTROL_POINT_POSE = new Pose(80, 36);
-        final Pose GPP_ROW_HEAD_POSE = new Pose(92, 36).withHeading(Math.toRadians(0));
-        final Pose GPP_ROW_TAIL_POSE = new Pose(121.210 + 8, 36).withHeading(Math.toRadians(0));
-        final Pose GPP_ROW_EXIT_POSE = new Pose(106, 36).withHeading(Math.toRadians(0));
-        final Pose GPP_ROW_EXIT_CONTROL_POINT = new Pose(73, 48);
+        final Pose GPP_APPROACH_CONTROL_POINT_POSE = new Pose(144-80, 36);
+        final Pose GPP_ROW_HEAD_POSE = new Pose(144-92, 36).withHeading(Math.toRadians(180-0));
+        final Pose GPP_ROW_TAIL_POSE = new Pose(144-121.210 + 8, 36).withHeading(Math.toRadians(180-0));
+        final Pose GPP_ROW_EXIT_POSE = new Pose(144-106, 36).withHeading(Math.toRadians(180-0));
+        final Pose GPP_ROW_EXIT_CONTROL_POINT = new Pose(144-73, 48);
 
         START_EJECT_SORT_AUTO = follower.pathBuilder()
                 .addPath(stayAt(START_PARALLEL_TO_GOAL_POSE))
@@ -214,7 +214,7 @@ public class RedAuto {
 
                 .build();
 
-        
+
         // Launch one ball from the preload
         PPG_EJECT_PATH_1 = follower.pathBuilder()
                 .addPath(stayAt(SHOOTING_POSE))
@@ -223,7 +223,7 @@ public class RedAuto {
                     .addParametricCallback(0.0, () -> auto.spinUp("from PPG_EJECT_PATH_1"))
                     .addParametricCallback(0.0, () -> auto.setRunAtEnd(auto::launchBalls1, "from PPG_EJECT_PATH_1 schedule auto::launchBalls1 at end"))
                 .build();
-    
+
         // Eject one ball from the preload
         PPG_EJECT_PATH_1b = follower.pathBuilder()
                 .addPath(stayAt(SHOOTING_POSE))
@@ -373,7 +373,7 @@ public class RedAuto {
                 .addPath(
                         new BezierLine(START_FACING_GOAL_POSE, SHOOTING_POSE)
                 )
-                    .setConstantHeadingInterpolation(Math.toRadians(36))
+                    .setConstantHeadingInterpolation(Math.toRadians(180-36))
                     .addParametricCallback(.00, () -> auto.spinUp("NATIVE_AUTO_START"))
                     .addParametricCallback(.00, () -> auto.setNextPath(REORIENT, "REORIENT from NAIVE_AUTO_START"))
                     .addParametricCallback(.00, () -> auto.setRunAtEnd(auto::launchBalls2, "auto::launchBalls2 from NAIVE_AUTO_START"))
@@ -388,7 +388,7 @@ public class RedAuto {
         REORIENT = follower
                 .pathBuilder()
                 .addPath(stayAt(NAIVE_AUTO_START.endPoint()))
-                    .setConstantHeadingInterpolation(Math.toRadians(36))
+                    .setConstantHeadingInterpolation(Math.toRadians(180-36))
                     .addParametricCallback(.00, () -> {
                         switch (auto.gamestate) {
                             case GPP:
@@ -409,17 +409,17 @@ public class RedAuto {
         GO_TO_SQUARE = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(SHOOTING_POSE, new Pose(105.341, 33.426))
+                        new BezierLine(SHOOTING_POSE, new Pose(144-105.341, 33.426))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(90))
+                .setLinearHeadingInterpolation(Math.toRadians(180-36), Math.toRadians(180-90))
                 .build();
 
         LOOK_AT_THINGY = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(120.872, 126.443), new Pose(105.172, 114.288))
+                        new BezierLine(new Pose(144-120.872, 126.443), new Pose(144-105.172, 114.288))
                 )
-                    .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(135))
+                    .setLinearHeadingInterpolation(Math.toRadians(180-36), Math.toRadians(180-135))
                     .addParametricCallback(0.95, () -> auto.setRunAtEnd(() -> auto.setState(PathAuto.AutoState.GET_TAG_ID), "Auto -> GET_TAG_ID from LOOK_AT_THINGY"))
                 .build();
 
@@ -431,7 +431,7 @@ public class RedAuto {
                     .pathBuilder()
                     //work
                     .addPath(stayAt(READ_TO_REORIENT.endPoint()))
-                    .setConstantHeadingInterpolation(Math.toRadians(45))
+                    .setConstantHeadingInterpolation(Math.toRadians(180-45))
                     .addParametricCallback(0.2, () -> auto.spinUp("CHECK_ORDER"))
                     .addParametricCallback(0.5, () -> auto.setRunAtEnd(() ->
                             {
@@ -625,9 +625,9 @@ public class RedAuto {
         SORT_SCAN_FORWARDS = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(123.236, 118.145), new Pose(126.274, 119.327)) // 116
+                        new BezierLine(new Pose(144-123.236, 118.145), new Pose(144-126.274, 119.327)) // 116
                 )
-                    .setConstantHeadingInterpolation(Math.toRadians(20))
+                    .setConstantHeadingInterpolation(Math.toRadians(180-20))
                     .addParametricCallback(0.5, () -> auto.setNextPath(SORT_SCAN_BACKWARDS, "SORT_SCAN_BACKWARDS from SORT_SCAN_FORWARDS"))
                     .addParametricCallback(0.5, () -> auto.setRunAtEnd(()->auto.startNextPath("from SORT_SCAN_BACKWARDS setRunAtEnd"), "auto::startNextPath from SORT_SCAN_FORWARDS"))
                 .build();
@@ -635,17 +635,17 @@ public class RedAuto {
         SORT_SCAN_BACKWARDS = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(126.274, 119.327), new Pose(123.236, 118.145))
+                        new BezierLine(new Pose(144-126.274, 119.327), new Pose(144-123.236, 118.145))
                 )
-                    .setConstantHeadingInterpolation(Math.toRadians(20))
+                    .setConstantHeadingInterpolation(Math.toRadians(180-20))
                 .build();
 
         SORT_TO_SHOOT = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(123.236, 118.145), new Pose(98, 98))
+                        new BezierLine(new Pose(144-123.236, 118.145), new Pose(144-98, 98))
                 )
-                    .setLinearHeadingInterpolation(Math.toRadians(20), Math.toRadians(45))
+                    .setLinearHeadingInterpolation(Math.toRadians(180-20), Math.toRadians(180-45))
                     .addParametricCallback(0.1, () -> auto.setNextPath(CHECK_ORDER, "CHECK_ORDER from SORT_TO_SHOOT"))
                     .addParametricCallback(0.2, () -> auto.setRunAtEnd(()->auto.startNextPath("from SORT_TO_SHOOT setRunAtEnd"), "auto::startNextPath from SORT_TO_SHOOT"))
                     .addParametricCallback(0.9, () -> auto.spinUp("SORT_TO_SHOOT Get ready to shoot"))
@@ -654,9 +654,9 @@ public class RedAuto {
         SHOOT_TO_SORT = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(98, 98), new Pose(123.236, 118.145))
+                        new BezierLine(new Pose(144-98, 98), new Pose(144-123.236, 118.145))
                 )
-                    .setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(20))
+                    .setLinearHeadingInterpolation(Math.toRadians(180-45), Math.toRadians(180-20))
                     .addParametricCallback(0.1, () -> auto.spinHalf("SHOOT_TO_SORT slow spin for sorting"))
                     .addParametricCallback(0.2, () -> auto.setNextPath(SORT_TO_SHOOT, "SHOOT_TO_SORT from SHOOT_TO_SORT")) // set this to what hapens after cycling
                     .addParametricCallback(0.9, () -> auto.setRunAtEnd(auto::cycle1, "auto::sort from SHOOT_TO_SORT")) // rename this cyclen, have cyclen remember next path and change it to sort_scan_forwards there instead if you want to cycle, or restore and call next path if done.

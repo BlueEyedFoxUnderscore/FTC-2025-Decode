@@ -26,7 +26,7 @@ public class Constants {
             //HEADING
             .useSecondaryHeadingPIDF(true)
             /* far*/.headingPIDFCoefficients(new PIDFCoefficients(2.0d, 0.0d, 0.0d, 0.0d))
-            /*near*/.secondaryHeadingPIDFCoefficients(new PIDFCoefficients(1.0d, 0.0d, 0.06d, 0.07d)) // d=.12 was the decel, but causes jumps from small changes
+            /*near*/.secondaryHeadingPIDFCoefficients(new PIDFCoefficients(0.7d, 0.0d, 0.05d, 0.07d)) // d=.12 was the decel, but causes jumps from small changes
             .headingPIDFSwitch(40.0d*(Math.PI/180.0d))
             //DRIVE
             .useSecondaryDrivePIDF(true)
@@ -34,7 +34,8 @@ public class Constants {
             /*near*/.secondaryDrivePIDFCoefficients(new FilteredPIDFCoefficients(0.006d, 0.0d, .000005d, 0.6d, 0.03d))
             .drivePIDFSwitch(30)
             //CENTRIPETAL
-            .centripetalScaling(0.0006d);
+            .centripetalScaling(0.0006d)
+            .turnHeadingErrorThreshold(0.005); //.01 default
     public static PathConstraints PATH_CONSTRAINTS = new PathConstraints(
             0.99d,
             100.0d,

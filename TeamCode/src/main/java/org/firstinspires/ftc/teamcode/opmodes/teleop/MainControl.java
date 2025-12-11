@@ -33,6 +33,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.Storage;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -118,7 +119,7 @@ public class MainControl extends OpMode {
 
     private double flywheelSpeed = 2600;
     TelemetryPacket packet;
-    double offset = PI;
+    double offset = Storage.FIELD_ORIENT_ANGLE;
 
     double testp = 65;
 
@@ -359,14 +360,12 @@ public class MainControl extends OpMode {
                 samples.clear();
                 break;
             case SAMPLE_TAGS:
-                elapsedTime.reset();
-                samples.clear();
-                aprilState = AprilState.SAMPLE_TAGS_2;
-            case SAMPLE_TAGS_2: /// Get apriltag samples
-                elapsedTime.reset();
-                aprilState = AprilState.SAMPLE_TAGS_3;
+                if (elapsedTime.seconds()>.3) {
+                    SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
+                    aprilState = AprilState.SAMPLE_TAGS_2;
+                }
                 break;
-            case SAMPLE_TAGS_3: /// Get apriltag samples
+            case SAMPLE_TAGS_2: /// Get apriltag samples
                 addSampleIfAvailable(samples);
                 if (samples.size() >= 8) {
                     SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
@@ -375,7 +374,7 @@ public class MainControl extends OpMode {
                     follower.holdPoint(average);
                     aprilState = AprilState.READY;
                 }
-                else break;
+                break;
         }
         //telemetry.addData("toGo", toGo);
         //telemetry.addData("joyX", gamepad1.left_stick_x);

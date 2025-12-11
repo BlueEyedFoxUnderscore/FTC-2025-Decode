@@ -44,7 +44,6 @@ public class PathAuto extends LinearOpMode {
     Follower follower;
     private Limelight3A camera; //any camera here
     private boolean following = false;
-    private final Pose TARGET_LOCATION = new Pose().withY(20); //Put the target location here
     private boolean acceptedPose = false;
     private boolean wasCalled = false;
 
@@ -55,7 +54,7 @@ public class PathAuto extends LinearOpMode {
         state = AutoState.SHOOTING;
     }
 
-    public  enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, GET_TAG_ID, GET_TAG_ID_2, CYCLING, CYCLING_2, CYCLING_3, CYCLING_READY, EJECT, EJECT_2, SAMPLE_TAGS_4}
+    public  enum AutoState {SHOOTING, SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, READY, GET_TAG_ID, GET_TAG_ID_2, CYCLING, CYCLING_2, CYCLING_3, CYCLING_READY, EJECT, EJECT_2, SAMPLE_TAGS_2b, SAMPLE_TAGS_4}
     public enum BallState {PPG, PGP, GP, PG, EMPTY, GPP}
 
     private AutoState state = AutoState.READY;
@@ -103,23 +102,23 @@ public class PathAuto extends LinearOpMode {
         int lowBattery = hardwareMap.appContext.getResources().getIdentifier("lowbattery", "raw", hardwareMap.appContext.getPackageName());
 
         RedAuto.init(follower, this);
-        setNextPath(RedAuto.START_EJECT_SORT_AUTO, "START_EJECT_SORT_AUTO from chosen AUTO");
+        BlueAuto.init(follower, this);
         if(hardwareMap.get(VoltageSensor.class, "Control Hub").getVoltage() < 12.5) {
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
             telemetry.addLine("");
             telemetry.addLine("            WARNING BATTERY VOLTAGE IS TOO");
-            telemetry.addLine("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
-            telemetry.addLine("░░██░░░░░░░░█████░░░░██░░░░░██░░");
-            telemetry.addLine("░░██░░░░░░░██░░░██░░░██░░█░░██░░");
-            telemetry.addLine("░░██░░░░░░██░░░░░██░░██░███░██░░");
-            telemetry.addLine("░░██░░░░░░░██░░░██░░░████░████░░");
-            telemetry.addLine("░░███████░░░█████░░░░███░░░███░░");
-            telemetry.addLine("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+            telemetry.addLine("░░░░░░░░▄░░░░░▄▄▄░░▄░░░▄░░░░░░░░");
+            telemetry.addLine("░░░░░░░░█░░░░█░░░█░█░█░█░░░░░░░░");
+            telemetry.addLine("░░░░░░░░▀▀▀▀░░▀▀▀░░▀▀░▀▀░░░░░░░░");
+
             telemetry.addLine("");
         }
+
+        boolean isRed = true;
         Log.i("20311", "Battery tested");
         while (!isStarted() && !isStopRequested()) {
+            if(gamepad1.dpad_up) telemetry.addLine("UP");
             try {
                 Drawing.drawRobot(follower.getPose());
                 Drawing.sendPacket();
@@ -127,12 +126,43 @@ public class PathAuto extends LinearOpMode {
                 throw new RuntimeException("Drawing failed " + e);
             }
             telemetry.update();
+            if (gamepad1.dpad_up) isRed = true;
+            if (gamepad1.dpad_down) isRed = false;
+            if (isRed) {
+                telemetry.addLine("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+                telemetry.addLine("░░░█████░░░░░██████░░█████░░░░░░");
+                telemetry.addLine("░░░██░░░██░░░██░░░░░░██░░░██░░░░");
+                telemetry.addLine("░░░█████░░░░░██████░░██░░░░██░░░");
+                telemetry.addLine("░░░██░░██░░░░██░░░░░░██░░░██░░░░");
+                telemetry.addLine("░░░██░░░░██░░██████░░█████░░░░░░");
+                telemetry.addLine("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+            } else {
+                telemetry.addLine("██████╗░██╗░░░░░██╗░░░██╗███████");
+                telemetry.addLine("██╔══██╗██║░░░░░██║░░░██║██╔════");
+                telemetry.addLine("██████╔╝██║░░░░░██║░░░██║█████╗░");
+                telemetry.addLine("██╔══██╗██║░░░░░██║░░░██║██╔══╝░");
+                telemetry.addLine("██████╔╝███████╗╚██████╔╝███████");
+                telemetry.addLine("╚═════╝░╚══════╝░╚═════╝░╚══════");
+            }
+
+            telemetry.addLine("didja adjust the limelight camera");
+
+
+
+
+
+
+
+            telemetry.addLine("if red isnt showing its blue");
+
+
         }
+        setNextPath(isRed? RedAuto.START_EJECT_SORT_AUTO: BlueAuto.START_EJECT_SORT_AUTO, "START_EJECT_SORT_AUTO from chosen AUTO");
+
         follower.setStartingPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
         follower.setPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
         Log.i("20311", "Initial starting pose " + nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)).toString());
         startNextPath("Initialize");
-        //follower.followPath(RedAuto.APRIL_TEST);
 
         LinkedList<Pose> samples = new LinkedList<>();
         ElapsedTime elapsedTime = new ElapsedTime();
@@ -201,26 +231,34 @@ public class PathAuto extends LinearOpMode {
                     }
                     break;
                 case SAMPLE_TAGS:
-                    setFollowerMaxPower(0);
                     elapsedTime.reset();
                     samples.clear();
                     state = AutoState.SAMPLE_TAGS_2;
-                case SAMPLE_TAGS_2: /// Get apriltag samples
-                    if (elapsedTime.seconds() > 0.1) {
+                case SAMPLE_TAGS_2: /// Wait .6 seconds for robot to stop pathing
+                    if (elapsedTime.seconds() > 0.6) {
+                        setFollowerMaxPower(0);
                         elapsedTime.reset();
-                        state = AutoState.SAMPLE_TAGS_3;
                         SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
+                        state = AutoState.SAMPLE_TAGS_2b;
                     }
                     break;
-                case SAMPLE_TAGS_3: /// Get apriltag samples
+                case SAMPLE_TAGS_2b: /// Wait .3 seconds for robot to stop moving
+                    if (elapsedTime.seconds() > 0.3) {
+                        elapsedTime.reset();
+                        SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
+                        state = AutoState.SAMPLE_TAGS_3;
+                    }
+                    break;
+                case SAMPLE_TAGS_3: /// Get apriltag samples for .3 seconds
                     addSampleIfAvailable(samples);
                     if (elapsedTime.seconds() > 0.3) {
-                        state = AutoState.SAMPLE_TAGS_4;
                         SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
+                        state = AutoState.SAMPLE_TAGS_4;
                     }
                     else break;
                 case SAMPLE_TAGS_4:
                     if(samples.size() >= 8) {
+                        SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                         follower.setPose(getAverageOfBest(samples, 5));
                         ++successfulRecogs;
                     }
@@ -251,7 +289,7 @@ public class PathAuto extends LinearOpMode {
                         spinDown("State machine CYCLING_2");
                         elapsedTime.reset();
                         state = AutoState.CYCLING_3;
-                        nextPath = RedAuto.SORT_SCAN_FORWARDS;
+                        nextPath = isRed? RedAuto.START_EJECT_SORT_AUTO: BlueAuto.START_EJECT_SORT_AUTO;
                     }
                     break;
                 case CYCLING_3:
@@ -313,10 +351,11 @@ public class PathAuto extends LinearOpMode {
             } catch (Exception e) {
                 throw new RuntimeException("Drawing failed " + e);
             }
-            telemetry.update();
-        }
-        Storage.ORIENTPOSE = follower.getPose();
-        Log.i("20311", "Exited the opmode");
+;;;;;;;;;;;;telemetry.update();
+;;;;;;;;}
+;;;;;;;;Storage.ORIENTPOSE = follower.getPose().withHeading(follower.getHeading());
+;;;;;;;;Storage.FIELD_ORIENT_ANGLE = isRed? PI: 0;
+;;;;;;;;Log.i("20311", "Exited the opmode");
     }
 
     public void setState(AutoState state) {
