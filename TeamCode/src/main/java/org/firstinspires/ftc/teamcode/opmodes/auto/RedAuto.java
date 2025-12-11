@@ -73,11 +73,11 @@ public class RedAuto {
         final Pose PPG_ROW_HEAD_POSE = new Pose(94-2, 84).withHeading(Math.toRadians(0));
         final Pose PPG_ROW_TAIL_POSE = new Pose(121 + 8, 84).withHeading(Math.toRadians(0));
 
-        final Pose PGP_APPROACH_CONTROL_POINT_POSE = new Pose(85.0212765957447, 60);
-        final Pose PGP_ROW_HEAD_POSE = new Pose(94, 60).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_TAIL_POSE = new Pose(121.547 + 8, 60).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_EXIT_POSE = new Pose(106, 60).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_EXIT_CONTROL_POINT = new Pose( 71, 72);
+        final Pose PGP_APPROACH_CONTROL_POINT_POSE = new Pose(85.0212765957447, 60-1);
+        final Pose PGP_ROW_HEAD_POSE = new Pose(94, 60-1).withHeading(Math.toRadians(0));
+        final Pose PGP_ROW_TAIL_POSE = new Pose(121.547 + 8, 60-1).withHeading(Math.toRadians(0));
+        final Pose PGP_ROW_EXIT_POSE = new Pose(106, 60-1).withHeading(Math.toRadians(0));
+        final Pose PGP_ROW_EXIT_CONTROL_POINT = new Pose( 71, 72-1);
 
         final Pose GPP_APPROACH_CONTROL_POINT_POSE = new Pose(80, 36);
         final Pose GPP_ROW_HEAD_POSE = new Pose(92, 36).withHeading(Math.toRadians(0));

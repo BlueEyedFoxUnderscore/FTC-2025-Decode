@@ -360,10 +360,9 @@ public class MainControl extends OpMode {
                 samples.clear();
                 break;
             case SAMPLE_TAGS:
-                if (elapsedTime.seconds()>.3) {
-                    SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
-                    aprilState = AprilState.SAMPLE_TAGS_2;
-                }
+                // see line 311 for timeout "else if ((holdTimeout.seconds() > 0.2) && shouldSetHoldPointSecondary)"
+                SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
+                aprilState = AprilState.SAMPLE_TAGS_2;
                 break;
             case SAMPLE_TAGS_2: /// Get apriltag samples
                 addSampleIfAvailable(samples);
