@@ -378,7 +378,7 @@ public class MainControl extends OpMode {
         //telemetry.addData("joyY", gamepad1.left_stick_y);
         //telemetry.addData("spin", gamepad1.right_stick_x);
         //telemetry.addData("shouldHold", shouldSetHoldPointInitial);
-        //telemetry.addData("velocity", follower.getVelocity().getMagnitude() < 0.1);
+        telemetry.addData("velocity", follower.getVelocity().getMagnitude());
         //telemetry.addData("joystickIsSwizzle", !(Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01));
         if(distanceIndex >-1) {
             telemetry.addLine("calculated flywheel speed: "+ calculatedFlywheel +"@" + distanceToTarget);
@@ -423,7 +423,7 @@ public class MainControl extends OpMode {
         distanceToTarget = getDistanceToFlywheel();
         for (int i = 0; i < KNOWN_TARGET_DISTANCES.length - 1; ++i) {
             if (distanceToTarget > KNOWN_TARGET_DISTANCES[i]) {
-                distanceIndex =i;
+                distanceIndex = i;
             }
         }
         if(distanceIndex >-1) {
@@ -445,16 +445,31 @@ public class MainControl extends OpMode {
         return RobotContainer.FLYWHEEL.isStable();
     }
 
+    boolean rightTriggerWasPressed = false;
+
+
     private void updateLoader() {
         if (gamepad1.right_bumper) intake();
         else cancelIntake();
-        if (gamepad1.right_trigger > 0.1 | gamepad1.left_bumper) {
+        if (
+                (gamepad1.right_trigger > 0.1 && (
+                    Math.abs(gamepad1.left_stick_x) > 0.1 ||
+                    Math.abs(gamepad1.left_stick_y) > 0.1 ||
+                    Math.abs(gamepad1.right_stick_x) > 0.1
+                )) ||
+                (gamepad1.left_bumper && (
+                    Math.abs(gamepad1.left_stick_x) > 0.1 ||
+                    Math.abs(gamepad1.left_stick_y) > 0.1 ||
+                    Math.abs(gamepad1.right_stick_x) > 0.1))) {
             spinByDistance("Right trigger pressed");
         }
-        if (gamepad1.left_bumper) {
+
+        if (gamepad1.leftBumperWasPressed()) {
+            spinByDistance("Right trigger pressed");
+            cancelIntake();
             launch();
         }
-        if (gamepad1.leftBumperWasReleased()) {
+        if (!gamepad1.left_bumper && gamepad1.right_trigger < 0.1) {
             spinDown("Left bumper released");
             cancelLaunch();
         }
