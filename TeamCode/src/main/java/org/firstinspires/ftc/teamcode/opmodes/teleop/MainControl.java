@@ -416,8 +416,8 @@ public class MainControl extends OpMode {
     double calculatedFlywheel;
     int distanceIndex =-1;
     double distanceToTarget;
-    final int[] KNOWN_TARGET_DISTANCES = {  18,   20,   24,   44,   60,   76,   90,  103,  108,  117,  137};
-    final int[] KNOWN_TARGET_SPEEDS =    {2370, 2360, 2290, 2440, 2620, 2760, 2910, 3060, 3160, 3300, 3500};
+    private static final int[] KNOWN_TARGET_DISTANCES = {  18,   20,   24,   44,   60,   76,   90,  103,  108,  117,  137};
+    private static final int[] KNOWN_TARGET_SPEEDS =    {2370, 2360, 2290, 2440, 2620, 2760, 2910, 3060, 3160, 3300, 3500};
     private void spinByDistance (String note) {
         distanceToTarget = getDistanceToFlywheel();
         for (int i = 0; i < KNOWN_TARGET_DISTANCES.length - 1; ++i) {
@@ -426,7 +426,7 @@ public class MainControl extends OpMode {
             }
         }
         if(distanceIndex >-1) {
-            calculatedFlywheel = (distanceToTarget - KNOWN_TARGET_DISTANCES[distanceIndex]) / (KNOWN_TARGET_DISTANCES[distanceIndex + 1] - KNOWN_TARGET_DISTANCES[distanceIndex]) * (KNOWN_TARGET_SPEEDS[distanceIndex] - KNOWN_TARGET_SPEEDS[distanceIndex + 1]) + KNOWN_TARGET_SPEEDS[distanceIndex + 1];
+            calculatedFlywheel = (distanceToTarget - KNOWN_TARGET_DISTANCES[distanceIndex]) / (KNOWN_TARGET_DISTANCES[distanceIndex + 1] - KNOWN_TARGET_DISTANCES[distanceIndex]) * (KNOWN_TARGET_SPEEDS[distanceIndex + 1] - KNOWN_TARGET_SPEEDS[distanceIndex]) + KNOWN_TARGET_SPEEDS[distanceIndex];
             RobotContainer.FLYWHEEL.setRequested(calculatedFlywheel, "spinByDistance");
             Log.w("20311", "from `MainControl::spinByDistance`: Out of bounds request with note " + note);
         }
