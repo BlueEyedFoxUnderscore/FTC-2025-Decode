@@ -55,7 +55,10 @@ public class MainControl extends OpMode {
     //GoBildaPinpointDriver odometry2;
 
     //private MotorGroup shooterGroup;
-    private boolean canright = true, canleft = true, canup = true, candown = true;
+    private boolean canright = true;
+    private boolean canleft = true;
+    private final boolean canup = true;
+    private final boolean candown = true;
     @Override
     public void init_loop() {
         follower.update();
@@ -166,8 +169,8 @@ public class MainControl extends OpMode {
 //        gate.setPosition(gamepad1.right_trigger);
     }
 
-    private LinkedList<Pose> samples = new LinkedList<>();
-    private ElapsedTime elapsedTime = new ElapsedTime();
+    private final LinkedList<Pose> samples = new LinkedList<>();
+    private final ElapsedTime elapsedTime = new ElapsedTime();
 
     void setFollowerMaxPower(double maxPower) {
         follower.setMaxPower(maxPower);
@@ -251,7 +254,7 @@ public class MainControl extends OpMode {
 
     AprilState aprilState = AprilState.READY;
 
-    enum AprilState {SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, SAMPLE_TAGS_4, READY;}
+    enum AprilState {SAMPLE_TAGS, SAMPLE_TAGS_2, SAMPLE_TAGS_3, SAMPLE_TAGS_4, READY}
 
     boolean shouldSetHoldPointInitial = true, shouldSetHoldPointSecondary = true;
     ElapsedTime holdTimeout = new ElapsedTime();
@@ -262,11 +265,12 @@ public class MainControl extends OpMode {
     boolean toGo = false;
 
     public static final Pose BLUE_PARKING = new Pose((72d+24d)+(18/2)+(18-16)-.5, (24d)+18d/2d, Math.toRadians(90));
+    public static final Pose RED_PARKING = new Pose((72d-24d)-(18/2)-(18-16)+.5, (24d)+18d/2d, Math.toRadians(90));
 
     private void updateDrive() {
         double headingCorrection = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144-9 - follower.getPose().getY(),144-9 - follower.getPose().getX())-follower.getHeading()));
         if (gamepad1.squareWasPressed()) {
-            follower.holdPoint(BLUE_PARKING);
+            follower.holdPoint(RED_PARKING);
             square = true;
             aprilState = AprilState.READY;
             Log.i("20311", "SQUARE ON due to SQUARE WAS PRESSED");
@@ -331,22 +335,22 @@ public class MainControl extends OpMode {
         } else {
             if (gamepad1.dpadRightWasPressed()) {
                 follower.setPose(follower.getPose().withY(follower.getPose().getY() + 0.2));
-                follower.holdPoint(BLUE_PARKING);
+                follower.holdPoint(RED_PARKING);
             }
 
             if (gamepad1.dpadLeftWasPressed()) {
                 follower.setPose(follower.getPose().withY(follower.getPose().getY() - 0.2));
-                follower.holdPoint(BLUE_PARKING);
+                follower.holdPoint(RED_PARKING);
             }
 
             if (gamepad1.dpadDownWasPressed()) {
                 follower.setPose(follower.getPose().withX(follower.getPose().getX() + 0.2));
-                follower.holdPoint(BLUE_PARKING);
+                follower.holdPoint(RED_PARKING);
             }
 
             if (gamepad1.dpadUpWasPressed()) {
                 follower.setPose(follower.getPose().withX(follower.getPose().getX() - 0.2));
-                follower.holdPoint(BLUE_PARKING);
+                follower.holdPoint(RED_PARKING);
             }
         }
         switch (aprilState) {
@@ -447,7 +451,15 @@ public class MainControl extends OpMode {
 
     boolean rightTriggerWasPressed = false;
 
-
+    boolean rightTriggerWasPulled() {
+        if (gamepad1.right_trigger > 0.1) {
+            if (!rightTriggerWasPressed) {
+                rightTriggerWasPressed = true;
+                return true;
+            }
+        } else rightTriggerWasPressed = false;
+        return false;
+    }
     private void updateLoader() {
         if (gamepad1.right_bumper) intake();
         else cancelIntake();
@@ -464,11 +476,12 @@ public class MainControl extends OpMode {
             spinByDistance("Right trigger pressed");
         }
 
-        if (gamepad1.leftBumperWasPressed()) {
+        if (gamepad1.leftBumperWasPressed() | rightTriggerWasPulled()) {
             spinByDistance("Right trigger pressed");
             cancelIntake();
             launch();
         }
+
         if (!gamepad1.left_bumper && gamepad1.right_trigger < 0.1) {
             spinDown("Left bumper released");
             cancelLaunch();
