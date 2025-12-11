@@ -169,8 +169,7 @@ public class PathAuto extends LinearOpMode {
                     break;
                 case GET_TAG_ID:
                     elapsedTime.reset();
-                    samples.clear();
-                    gpp = pgp = ppg = 0;
+                    // gpp = pgp = ppg = 0;
                     state = AutoState.GET_TAG_ID_2;
                     break;
                 case GET_TAG_ID_2:
@@ -192,11 +191,11 @@ public class PathAuto extends LinearOpMode {
                         if (Math.max(Math.max(gpp, pgp), ppg) == gpp) {
                             gamestate = BallState.GPP;
                         }
-                        if (Math.max(Math.max(gpp, pgp), ppg) == pgp) {
-                            gamestate = BallState.PGP;
-                        }
                         if (Math.max(Math.max(gpp, pgp), ppg) == ppg) {
                             gamestate = BallState.PPG;
+                        }
+                        if (Math.max(Math.max(gpp, pgp), ppg) == pgp) {
+                            gamestate = BallState.PGP;
                         }
                         state = AutoState.READY;
                     }
