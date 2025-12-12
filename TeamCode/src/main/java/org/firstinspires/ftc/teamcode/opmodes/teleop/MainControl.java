@@ -128,6 +128,8 @@ public class MainControl extends OpMode {
     ElapsedTime looptime = new ElapsedTime();
     @Override
     public void loop() {
+        telemetry.addData("GAME STATE", Storage.IS_RED? "Red": "Blue");
+        if (gamepad1.guideWasPressed()) Storage.IS_RED = !Storage.IS_RED;
 
         if (loggingEnabled) packet = new TelemetryPacket();
         updateDrive();
@@ -272,9 +274,9 @@ public class MainControl extends OpMode {
     public static final Pose RED_PARKING = new Pose((72d-24d)-(18/2)-(18-16)+.5, (24d)+18d/2d, Math.toRadians(90));
 
     private void updateDrive() {
-        double headingCorrection = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144-9 - follower.getPose().getY(),144-9 - follower.getPose().getX())-follower.getHeading()));
+        double headingCorrection = headingController.calculate(-AngleUnit.normalizeRadians(atan2(144-9 - follower.getPose().getY(),(Storage.IS_RED? 144-9: 9) - follower.getPose().getX())-follower.getHeading()));
         if (gamepad1.squareWasPressed()) {
-            follower.holdPoint(RED_PARKING);
+            follower.holdPoint(Storage.IS_RED? RED_PARKING: BLUE_PARKING);
             square = true;
             aprilState = AprilState.READY;
             if (loggingEnabled) Log.i("20311", "SQUARE ON due to SQUARE WAS PRESSED");
@@ -413,10 +415,11 @@ public class MainControl extends OpMode {
     }
     // 2800 2400
 
-    private static final Pose GOAL_POSE = new Pose(144-9, 144-9);
+    private static final Pose GOAL_POSE_RED = new Pose(144-9, 144-9);
+    private static final Pose GOAL_POSE_BLUE = new Pose(9, 144-9);
 
     private double getDistanceToFlywheel () {
-        return follower.getPose().distanceFrom(GOAL_POSE) - (1d/2d * 17.2);
+        return follower.getPose().distanceFrom(Storage.IS_RED? GOAL_POSE_RED: GOAL_POSE_BLUE) - (1d/2d * 17.2);
     }
 
     double calculatedFlywheel;
@@ -475,7 +478,9 @@ public class MainControl extends OpMode {
         if (!gamepad1.left_bumper && !rightTriggerPressed) spinDown("Left bumper released");
         if (gamepad1.rightBumperWasPressed()) intake();
         if (gamepad1.rightBumperWasReleased()) cancelIntake();
-        if (leftBumperWasPressed) launch();
+        if (leftBumperWasPressed)
+            if (distanceToTarget < 18 + 17.5/2.) gamepad1.rumble(500);
+            else launch();
         if (gamepad1.leftBumperWasReleased()) cancelLaunch();
     }
 }

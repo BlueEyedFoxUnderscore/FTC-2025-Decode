@@ -159,6 +159,9 @@ public class PathAuto extends LinearOpMode {
 
 
         }
+
+        Storage.IS_RED = isRed;
+
         setNextPath(isRed? RedAuto.START_EJECT_SORT_AUTO: BlueAuto.START_EJECT_SORT_AUTO, "START_EJECT_SORT_AUTO from chosen AUTO");
 
         follower.setStartingPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
