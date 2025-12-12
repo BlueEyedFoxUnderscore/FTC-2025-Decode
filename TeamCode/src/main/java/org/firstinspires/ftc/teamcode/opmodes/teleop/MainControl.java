@@ -44,6 +44,8 @@ import java.util.LinkedList;
 @TeleOp//(name = "***FTC OpMode 2", group = "TeleOp")
 
 public class MainControl extends OpMode {
+    private static boolean loggingEnabled = false;
+
     int mediumBeep;
     int lowBattery;
     FtcDashboard dash;
@@ -127,15 +129,16 @@ public class MainControl extends OpMode {
     @Override
     public void loop() {
 
-        packet = new TelemetryPacket();
+        if (loggingEnabled) packet = new TelemetryPacket();
         updateDrive();
+        telemetry.addData("loop time", looptime.milliseconds());
         telemetry.addData("Requested Speed", flywheelSpeed);
         telemetry.addData("Flywheel Speed 1", RobotContainer.FLYWHEEL.getSpeed1());
         telemetry.addData("Flywheel stable", flywheelStable());
-        packet.put("Flywheel Speed 1", RobotContainer.FLYWHEEL.getSpeed1());
-        packet.put("Flywheel Speed 2", RobotContainer.FLYWHEEL.getSpeed2());
-        packet.put("flywheel PID P", testp);
-        packet.put("loop time", looptime.milliseconds());
+        if (loggingEnabled) packet.put("Flywheel Speed 1", RobotContainer.FLYWHEEL.getSpeed1());
+        if (loggingEnabled) packet.put("Flywheel Speed 2", RobotContainer.FLYWHEEL.getSpeed2());
+        if (loggingEnabled) packet.put("flywheel PID P", testp);
+        if (loggingEnabled) packet.put("loop time", looptime.milliseconds());
         looptime.reset();
         Drawing.drawDebug(follower);
         // Drawing.sendPacket();
@@ -166,7 +169,7 @@ public class MainControl extends OpMode {
         telemetry.clear();
 
 
-        dash.sendTelemetryPacket(packet);
+        if (loggingEnabled) dash.sendTelemetryPacket(packet); // Send FTC dashboard packet
 //        gate.setPosition(gamepad1.right_trigger);
     }
 
@@ -274,18 +277,18 @@ public class MainControl extends OpMode {
             follower.holdPoint(RED_PARKING);
             square = true;
             aprilState = AprilState.READY;
-            Log.i("20311", "SQUARE ON due to SQUARE WAS PRESSED");
+            if (loggingEnabled) Log.i("20311", "SQUARE ON due to SQUARE WAS PRESSED");
         }
 
         if (gamepad1.squareWasReleased()) {
             follower.startTeleopDrive(true);
             square = false;
-            Log.i("20311", "SQUARE OFF due to SQUARE WAS RELEASED");
+            if (loggingEnabled) Log.i("20311", "SQUARE OFF due to SQUARE WAS RELEASED");
         }
 
         if (Math.abs(gamepad1.left_stick_y) > 0.01 || Math.abs(gamepad1.left_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_x) > 0.01 || gamepad1.right_trigger > 0.1) {
             square = false;
-            Log.i("20311", "SQUARE OFF due to STICK MOVEMENT");
+            if (loggingEnabled) Log.i("20311", "SQUARE OFF due to STICK MOVEMENT");
         }
 
         //telemetry.addData("Square On", square);
@@ -459,31 +462,21 @@ public class MainControl extends OpMode {
         return false;
     }
     private void updateLoader() {
-        if (gamepad1.right_bumper) intake();
-        else cancelIntake();
-        if (
-                (gamepad1.right_trigger > 0.1 && (
-                    Math.abs(gamepad1.left_stick_x) > 0.1 ||
-                    Math.abs(gamepad1.left_stick_y) > 0.1 ||
-                    Math.abs(gamepad1.right_stick_x) > 0.1
-                )) ||
-                (gamepad1.left_bumper && (
-                    Math.abs(gamepad1.left_stick_x) > 0.1 ||
-                    Math.abs(gamepad1.left_stick_y) > 0.1 ||
-                    Math.abs(gamepad1.right_stick_x) > 0.1))) {
-            spinByDistance("Right trigger pressed");
-        }
+        boolean joysticksCentered = (
+                    Math.abs(gamepad1.left_stick_x) < 0.1 &&
+                    Math.abs(gamepad1.left_stick_y) < 0.1 &&
+                    Math.abs(gamepad1.right_stick_x) < 0.1
+                );
+        boolean rightTriggerPressed = gamepad1.right_trigger > 0.1;
+        boolean leftBumperWasPressed = gamepad1.leftBumperWasPressed();
 
-        if (gamepad1.leftBumperWasPressed() | rightTriggerWasPulled()) {
-            spinByDistance("Right trigger pressed");
-            cancelIntake();
-            launch();
-        }
-
-        if (!gamepad1.left_bumper && gamepad1.right_trigger < 0.1) {
-            spinDown("Left bumper released");
-            cancelLaunch();
-        }
+        if ((rightTriggerPressed || gamepad1.left_bumper) && !joysticksCentered) spinByDistance("Right trigger pressed");
+        if (leftBumperWasPressed | rightTriggerWasPulled()) spinByDistance("Right trigger pressed");
+        if (!gamepad1.left_bumper && !rightTriggerPressed) spinDown("Left bumper released");
+        if (gamepad1.rightBumperWasPressed()) intake();
+        if (gamepad1.rightBumperWasReleased()) cancelIntake();
+        if (leftBumperWasPressed) launch();
+        if (gamepad1.leftBumperWasReleased()) cancelLaunch();
     }
 }
 

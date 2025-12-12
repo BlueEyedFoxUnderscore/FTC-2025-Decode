@@ -7,6 +7,7 @@ import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
+import com.pedropathing.paths.PathConstraints;
 
 import org.firstinspires.ftc.teamcode.subsystems.RobotContainer;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RedAuto {
+    private static boolean loggingEnabled = false;
     public static PathChain START_EJECT_SORT_AUTO;
     public static PathChain PPG_EJECT_PATH_1;
     public static PathChain PPG_EJECT_PATH_1b;
@@ -40,16 +42,24 @@ public class RedAuto {
     public static PathChain SORT_SCAN_BACKWARDS;
     public static PathChain SORT_SCAN_FORWARDS;
     public static PathChain READ_TO_REORIENT;
+    public static PathChain REORIENTING;
     public static PathChain SHOOT_TO_SORT;
     public static PathChain NAIVE_AUTO_START;
     public static PathChain REORIENT;
     public static PathChain COLLECT_PPG_ROW;
+    public static PathChain COLLECT_PPG_ROW2;
     public static PathChain COLLECT_PGP_ROW;
+    public static PathChain COLLECT_PGP_ROW2;
     public static PathChain COLLECT_GPP_ROW;
+    public static PathChain COLLECT_GPP_ROW2;
     public static PathChain GO_TO_SQUARE;
     public static PathChain LOOK_AT_THINGY;
 
-    private static final double PICKUP_SPEED = 0.5;
+    private static final double PICKUP_SPEED = 0.7;
+    private static final double PICKUP_SPEED_END = 1;
+     private static final double PICKUP_END_TIME = .80;
+
+    private static PathConstraints dontRun = new PathConstraints(0.01d,100.0d,1.0d,1.0d);
 
     public static BezierLine stayAt(Pose location) {
         return new BezierLine(location, location.withY(location.getY() + 1./1000.));
@@ -65,25 +75,32 @@ public class RedAuto {
         final Pose START_FACING_GOAL_POSE = new Pose(121.716, 124.080).withHeading(Math.toRadians(36));
 
         final Pose START_PARALLEL_TO_GOAL_POSE = new Pose(120.872, 126.443).withHeading(Math.toRadians(126));
-        final Pose READ_OBELISK_POSE = new Pose(/*86.603, 130.157,/**/ 101, 115).withHeading(Math.toRadians(135));
+        final Pose READ_OBELISK_POSE = new Pose(101, 115).withHeading(Math.toRadians(135));
 
+        final Pose PRE_SHOOTING_POSE = new Pose(99.5, 106.5).withHeading(Math.toRadians(45));
         final Pose SHOOTING_POSE = new Pose(98, 98).withHeading(Math.toRadians(45));
 
         final Pose PPG_APPROACH_CONTROL_POINT_POSE = new Pose(90-2, 84);
         final Pose PPG_ROW_HEAD_POSE = new Pose(94-2, 84).withHeading(Math.toRadians(0));
-        final Pose PPG_ROW_TAIL_POSE = new Pose(121 + 8, 84).withHeading(Math.toRadians(0));
+        final Pose PPG_ROW_TAIL_POSE = new Pose(121 + 5.5, 84).withHeading(Math.toRadians(0));
+        //                                               /|\ row end (5.5 at speed 2)
 
-        final Pose PGP_APPROACH_CONTROL_POINT_POSE = new Pose(85.0212765957447, 60-1);
-        final Pose PGP_ROW_HEAD_POSE = new Pose(94, 60-1).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_TAIL_POSE = new Pose(121.547 + 8, 60-1).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_EXIT_POSE = new Pose(106, 60-1).withHeading(Math.toRadians(0));
-        final Pose PGP_ROW_EXIT_CONTROL_POINT = new Pose( 71, 72-1);
+        final Pose PGP_APPROACH_CONTROL_POINT_POSE = new Pose(85.0212765957447, 60-1.5);
+        final Pose PGP_ROW_HEAD_POSE = new Pose(94, 60-1.5).withHeading(Math.toRadians(0));
+        final Pose PGP_ROW_TAIL_POSE = new Pose(121.547 + 12, 60-1.5).withHeading(Math.toRadians(0));
+        //                                                   /|\ row end (12 at speed .2)
+
+        final Pose PGP_ROW_EXIT_POSE = new Pose(106, 60-1.5).withHeading(Math.toRadians(0));
+        final Pose PGP_ROW_EXIT_CONTROL_POINT = new Pose( 71, 72-1.5);
 
         final Pose GPP_APPROACH_CONTROL_POINT_POSE = new Pose(80, 36);
         final Pose GPP_ROW_HEAD_POSE = new Pose(92, 36).withHeading(Math.toRadians(0));
-        final Pose GPP_ROW_TAIL_POSE = new Pose(121.210 + 8, 36).withHeading(Math.toRadians(0));
+        final Pose GPP_ROW_TAIL_POSE = new Pose(121.210 + 12, 36).withHeading(Math.toRadians(0));
+        //                                                   /|\ row end (12 at speed .2)
+
         final Pose GPP_ROW_EXIT_POSE = new Pose(106, 36).withHeading(Math.toRadians(0));
         final Pose GPP_ROW_EXIT_CONTROL_POINT = new Pose(73, 48);
+
 
         START_EJECT_SORT_AUTO = follower.pathBuilder()
                 .addPath(stayAt(START_PARALLEL_TO_GOAL_POSE))
@@ -96,12 +113,19 @@ public class RedAuto {
                 .addPath(new BezierLine(START_PARALLEL_TO_GOAL_POSE, READ_OBELISK_POSE))
                     .setLinearHeadingInterpolation(START_PARALLEL_TO_GOAL_POSE.getHeading(), READ_OBELISK_POSE.getHeading())
                     .addParametricCallback(0, () -> auto.setState(PathAuto.AutoState.GET_TAG_ID)) // start reading
-                .addPath(new BezierLine(READ_OBELISK_POSE, SHOOTING_POSE)) // to sort position)
-                    .setLinearHeadingInterpolation(READ_OBELISK_POSE.getHeading(), SHOOTING_POSE.getHeading())
+                .addPath(new BezierLine(READ_OBELISK_POSE, PRE_SHOOTING_POSE)) // to sort position)
+                    .setLinearHeadingInterpolation(READ_OBELISK_POSE.getHeading(), PRE_SHOOTING_POSE.getHeading())
+                .addPath(new BezierLine(PRE_SHOOTING_POSE, SHOOTING_POSE)) // to sort position)
+                    .setLinearHeadingInterpolation(PRE_SHOOTING_POSE.getHeading(), SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, () -> auto.setState(PathAuto.AutoState.GET_TAG_ID)) // start reading
+                    .addParametricCallback(0.0, () -> auto.setRunAtEnd(() -> follower.followPath(REORIENTING), "from READ_TO_REORIENT goto REORIENTING"))
+                    .build();
+
+        REORIENTING = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, auto::reorient)
+                    .addParametricCallback(0, () -> auto.spinUp("Prespin"))
                     .addParametricCallback(0, () -> {
                             switch (auto.gamestate) {
                                 case GPP:
@@ -119,7 +143,7 @@ public class RedAuto {
                 .build();
 
         // Eject one ball from the preload
-        GPP_EJECT_PATH_1 = follower.pathBuilder()
+        GPP_EJECT_PATH_1 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -128,7 +152,7 @@ public class RedAuto {
                 .build();
 
         // Spin up for the preload shot
-        GPP_EJECT_PATH_2 = follower.pathBuilder()
+        GPP_EJECT_PATH_2 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -138,7 +162,7 @@ public class RedAuto {
                 .build();
 
         // Shoot the remaining 2 preload balls then collect PGP
-        GPP_EJECT_PATH_2b = follower.pathBuilder()
+        GPP_EJECT_PATH_2b = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -150,7 +174,7 @@ public class RedAuto {
 
 
         // Shoot all 3 PGP, then collect PPG
-        GPP_EJECT_PATH_3 = follower.pathBuilder()
+        GPP_EJECT_PATH_3 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -161,7 +185,7 @@ public class RedAuto {
                 .build();
 
         // Eject 1 from PGP
-        GPP_EJECT_PATH_4 = follower.pathBuilder()
+        GPP_EJECT_PATH_4 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, () -> auto.setNextPath(GPP_EJECT_PATH_4b, "GPP_EJECT_PATH_4b"))
@@ -169,7 +193,7 @@ public class RedAuto {
                 .build();
 
         // Spin up for the preload shot
-        GPP_EJECT_PATH_4b = follower.pathBuilder()
+        GPP_EJECT_PATH_4b = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -179,7 +203,7 @@ public class RedAuto {
                 .build();
 
         // Spin up and launch the remaining preload shot
-        GPP_EJECT_PATH_4c = follower.pathBuilder()
+        GPP_EJECT_PATH_4c = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, auto::launchBalls2)
@@ -187,14 +211,14 @@ public class RedAuto {
                     .addParametricCallback(0, () -> auto.setNextPath(COLLECT_GPP_ROW, "COLLECT_GPP_ROW"))
                 .build();
 
-        GPP_EJECT_PATH_5 = follower.pathBuilder()
+        GPP_EJECT_PATH_5 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, auto::eject)
                     .addParametricCallback(0, () -> auto.setNextPath(GPP_EJECT_PATH_5b, "GPP_EJECT_PATH_5b"))
                 .build();
 
-        GPP_EJECT_PATH_5b = follower.pathBuilder()
+        GPP_EJECT_PATH_5b = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0.0, ()  -> {
@@ -203,7 +227,7 @@ public class RedAuto {
                     })
                 .build();
 
-        PGP_EJECT_PATH_1 = follower.pathBuilder()
+        PGP_EJECT_PATH_1 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -214,18 +238,18 @@ public class RedAuto {
 
                 .build();
 
-        
+
         // Launch one ball from the preload
-        PPG_EJECT_PATH_1 = follower.pathBuilder()
+        PPG_EJECT_PATH_1 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0.0, () -> auto.setNextPath(PPG_EJECT_PATH_1b, "from PPG_EJECT_PATH_1 schedule GPP_EJECT_PATH_1b at end"))
                     .addParametricCallback(0.0, () -> auto.spinUp("from PPG_EJECT_PATH_1"))
                     .addParametricCallback(0.0, () -> auto.setRunAtEnd(auto::launchBalls1, "from PPG_EJECT_PATH_1 schedule auto::launchBalls1 at end"))
                 .build();
-    
+
         // Eject one ball from the preload
-        PPG_EJECT_PATH_1b = follower.pathBuilder()
+        PPG_EJECT_PATH_1b = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0.0, auto::eject)
@@ -233,7 +257,7 @@ public class RedAuto {
                 .build();
 
         // Spin up for the preload shot
-        PPG_EJECT_PATH_2 = follower.pathBuilder()
+        PPG_EJECT_PATH_2 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -243,7 +267,7 @@ public class RedAuto {
                 .build();
 
         // Shoot the remaining preload ball then collect GPP
-        PPG_EJECT_PATH_2b = follower.pathBuilder()
+        PPG_EJECT_PATH_2b = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -255,7 +279,7 @@ public class RedAuto {
 
 
         // Shoot all 3 PGP, then collect PPG
-        PPG_EJECT_PATH_3 = follower.pathBuilder()
+        PPG_EJECT_PATH_3 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -266,7 +290,7 @@ public class RedAuto {
                 .build();
 
         // Eject 1 from PGP
-        PPG_EJECT_PATH_4 = follower.pathBuilder()
+        PPG_EJECT_PATH_4 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, () -> auto.setNextPath(PPG_EJECT_PATH_4b, "PPG_EJECT_PATH_4b"))
@@ -274,7 +298,7 @@ public class RedAuto {
                 .build();
 
         // Spin up for the preload shot
-        PPG_EJECT_PATH_4b = follower.pathBuilder()
+        PPG_EJECT_PATH_4b = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
 
@@ -284,7 +308,7 @@ public class RedAuto {
                 .build();
 
         // Spin up and launch the remaining preload shot
-        PPG_EJECT_PATH_4c = follower.pathBuilder()
+        PPG_EJECT_PATH_4c = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, auto::launchBalls2)
@@ -292,14 +316,14 @@ public class RedAuto {
                     .addParametricCallback(0, () -> auto.setNextPath(COLLECT_PPG_ROW, "COLLECT_PPG_ROW"))
                 .build();
 
-        PPG_EJECT_PATH_5 = follower.pathBuilder()
+        PPG_EJECT_PATH_5 = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, auto::eject)
                     .addParametricCallback(0, () -> auto.setNextPath(PPG_EJECT_PATH_5b, "PPG_EJECT_PATH_5b"))
                 .build();
 
-        PPG_EJECT_PATH_5b = follower.pathBuilder()
+        PPG_EJECT_PATH_5b = follower.pathBuilder(dontRun)
                 .addPath(stayAt(SHOOTING_POSE))
                     .setConstantHeadingInterpolation(SHOOTING_POSE.getHeading())
                     .addParametricCallback(0.0, ()  -> {
@@ -314,14 +338,17 @@ public class RedAuto {
                     .setLinearHeadingInterpolation(SHOOTING_POSE.getHeading(), PPG_ROW_HEAD_POSE.getHeading())
                     .addParametricCallback(0, RobotContainer.LOADER::intake)
                 .addPath(new BezierLine(PPG_ROW_HEAD_POSE, PPG_ROW_TAIL_POSE))
-                    .addParametricCallback(0, () -> auto.setFollowerMaxPower(PICKUP_SPEED))
-                    .addParametricCallback(0.9, () -> auto.setFollowerMaxPower(0.2))
+                    .addParametricCallback(0.2, () -> auto.setFollowerMaxPower(PICKUP_SPEED))
+                    .addParametricCallback(PICKUP_END_TIME, () -> auto.setFollowerMaxPower(PICKUP_SPEED_END))
                     .setLinearHeadingInterpolation(PPG_ROW_HEAD_POSE.getHeading(), PPG_ROW_TAIL_POSE.getHeading())
+                    .addParametricCallback(0.0, () -> auto.setRunAtEnd(() -> follower.followPath(COLLECT_PPG_ROW2), "cont"))
+                .build();
+        COLLECT_PPG_ROW2 = follower.pathBuilder()
                 .addPath(new BezierLine(PPG_ROW_TAIL_POSE, SHOOTING_POSE))
                     .setLinearHeadingInterpolation(PPG_ROW_TAIL_POSE.getHeading(), SHOOTING_POSE.getHeading())
                     .addParametricCallback(0, () -> auto.setFollowerMaxPower(1))
                 .addPath(stayAt(SHOOTING_POSE))
-                    .addParametricCallback(.95, RobotContainer.LOADER::cancelIntake)
+                    .addParametricCallback(0.2, RobotContainer.LOADER::cancelIntake)
                     .addParametricCallback(0, () -> auto.spinUp("COLLECT_PPG_ROW"))
                     .addParametricCallback(0, () -> auto.setRunAtEnd(() -> follower.followPath(afterCollectPPG.get()), "Start path "+afterCollectPPG.get()+" after COLLECT_PPG_ROW" ))
                 .build();
@@ -333,8 +360,11 @@ public class RedAuto {
                     .addParametricCallback(0.0, RobotContainer.LOADER::intake)
                 .addPath(new BezierLine(PGP_ROW_HEAD_POSE, PGP_ROW_TAIL_POSE))
                     .setLinearHeadingInterpolation(PGP_ROW_HEAD_POSE.getHeading(), PGP_ROW_TAIL_POSE.getHeading())
-                    .addParametricCallback(0, () -> auto.setFollowerMaxPower(PICKUP_SPEED))
-                    .addParametricCallback(0.9, () -> auto.setFollowerMaxPower(0.2))
+                    .addParametricCallback(0.2, () -> auto.setFollowerMaxPower(PICKUP_SPEED))
+                    .addParametricCallback(PICKUP_END_TIME, () -> auto.setFollowerMaxPower(PICKUP_SPEED_END))
+                    .addParametricCallback(0.0, () -> auto.setRunAtEnd(() -> follower.followPath(COLLECT_PGP_ROW2), "cont"))
+                .build();
+        COLLECT_PGP_ROW2 = follower.pathBuilder()
                 .addPath(new BezierLine(PGP_ROW_TAIL_POSE, PGP_ROW_EXIT_POSE))
                     .setLinearHeadingInterpolation(PGP_ROW_TAIL_POSE.getHeading(), PGP_ROW_EXIT_POSE.getHeading())
                     .addParametricCallback(0, () -> auto.setFollowerMaxPower(1))
@@ -342,7 +372,7 @@ public class RedAuto {
                     .setLinearHeadingInterpolation(PGP_ROW_EXIT_POSE.getHeading(), SHOOTING_POSE.getHeading())
                     .addParametricCallback(0.0, () -> auto.setNextPath(afterCollectPGP.get(), "afterCollectGroup2.get() from COLLECT_GROUP_2"))
                     .addParametricCallback(0.0, () -> auto.setRunAtEnd(() -> auto.startNextPath("at end of COLLECT_GROUP_2"), "auto::startNextPath from COLLECT_GROUP_2"))
-                    .addParametricCallback(0.0, RobotContainer.LOADER::cancelIntake)
+                    .addParametricCallback(0.2, RobotContainer.LOADER::cancelIntake)
                     .addParametricCallback(0.5, ()->auto.spinUp("COLLECT_GROUP_2"))
                 .build();
 
@@ -354,8 +384,11 @@ public class RedAuto {
                     .addParametricCallback(0.0, RobotContainer.LOADER::intake)
                 .addPath(new BezierLine(GPP_ROW_HEAD_POSE, GPP_ROW_TAIL_POSE))
                     .setLinearHeadingInterpolation(GPP_ROW_HEAD_POSE.getHeading(), GPP_ROW_TAIL_POSE.getHeading())
-                    .addParametricCallback(0.0, () -> auto.setFollowerMaxPower(PICKUP_SPEED))
-                    .addParametricCallback(0.9, () -> auto.setFollowerMaxPower(0.2))
+                    .addParametricCallback(0.2, () -> auto.setFollowerMaxPower(PICKUP_SPEED))
+                    .addParametricCallback(PICKUP_END_TIME, () -> auto.setFollowerMaxPower(PICKUP_SPEED_END))
+                    .addParametricCallback(0.0, () -> auto.setRunAtEnd(() -> follower.followPath(COLLECT_GPP_ROW2), "cont"))
+                .build();
+        COLLECT_GPP_ROW2 = follower.pathBuilder()
                 .addPath(new BezierLine(GPP_ROW_TAIL_POSE, GPP_ROW_EXIT_POSE))
                     .setLinearHeadingInterpolation(GPP_ROW_TAIL_POSE.getHeading(), GPP_ROW_EXIT_POSE.getHeading())
                     .addParametricCallback(0.0, () -> auto.setFollowerMaxPower(1.0))
@@ -363,7 +396,7 @@ public class RedAuto {
                     .setLinearHeadingInterpolation(GPP_ROW_EXIT_POSE.getHeading(), SHOOTING_POSE.getHeading())
                     .addParametricCallback(0.0, () -> auto.setNextPath(afterCollectGPP.get(), "afterCollectGroup3.get() from COLLECT_GROUP_3"))
                     .addParametricCallback(0.0, () -> auto.setRunAtEnd(() -> auto.startNextPath("at end of COLLECT_GROUP_3"), "auto::startNextPath from COLLECT_GROUP_3"))
-                    .addParametricCallback(0.0, RobotContainer.LOADER::cancelIntake)
+                    .addParametricCallback(0.2, RobotContainer.LOADER::cancelIntake)
                     .addParametricCallback(0.5, ()->auto.spinUp("COLLECT_GROUP_3"))
                 .build();
 
@@ -435,7 +468,7 @@ public class RedAuto {
                     .addParametricCallback(0.2, () -> auto.spinUp("CHECK_ORDER"))
                     .addParametricCallback(0.5, () -> auto.setRunAtEnd(() ->
                             {
-                                Log.i("20311", "Doing CHECK_ORDER with h" + auto.heldstate + " g" + auto.gamestate);
+                                if (loggingEnabled) Log.i("20311", "Doing CHECK_ORDER with h" + auto.heldstate + " g" + auto.gamestate);
                                 switch (auto.heldstate) {
                                     case PGP:
                                         switch (auto.gamestate) {
@@ -466,7 +499,7 @@ public class RedAuto {
                                                 auto.heldstate = PathAuto.BallState.PPG;
                                                 break;
                                             case PGP:
-                                                Log.i("20311", "ASSERTION ---- Shouldn't get to hGPP, gPGP");
+                                                if (loggingEnabled) Log.i("20311", "ASSERTION ---- Shouldn't get to hGPP, gPGP");
                                                 break;
                                             case GPP:
                                                 auto.launchBalls3();
@@ -490,7 +523,7 @@ public class RedAuto {
                                                 auto.heldstate = PathAuto.BallState.PGP;
                                                 break;
                                             case GPP:
-                                                Log.i("20311", "ASSERTION ---- Shouldn't get to hPPG, gGPP");
+                                                if (loggingEnabled) Log.i("20311", "ASSERTION ---- Shouldn't get to hPPG, gGPP");
                                                 break;
                                         }
                                         break;
@@ -503,20 +536,20 @@ public class RedAuto {
                                                 auto.heldstate = PathAuto.BallState.PG;
                                                 break;
                                             case PGP:
-                                                Log.i("20311", "executing auto.launchBalls2() from CHECK_ORDER hGP, gPGP after end");
+                                                if (loggingEnabled) Log.i("20311", "executing auto.launchBalls2() from CHECK_ORDER hGP, gPGP after end");
                                                 auto.launchBalls2();
                                                 auto.setRunAtEnd(auto::launchBalls2, "auto::launchBalls2 from CHECK_ORDER hGP, gPGP");
                                                 auto.heldstate = PathAuto.BallState.EMPTY;
                                                 break;
                                             case GPP:
-                                                Log.i("20311", "ASSERTION ---- Shouldn't get to hGP, gGPP");
+                                                if (loggingEnabled) Log.i("20311", "ASSERTION ---- Shouldn't get to hGP, gGPP");
                                                 break;
                                         }
                                         break;
                                     case PG:
                                         switch (auto.gamestate) {
                                             case PPG:
-                                                Log.i("20311", "executing auto.launchBalls2() from CHECK_ORDER hPG, gPPG after end");
+                                                if (loggingEnabled) Log.i("20311", "executing auto.launchBalls2() from CHECK_ORDER hPG, gPPG after end");
                                                 auto.launchBalls2();
                                                 auto.heldstate = PathAuto.BallState.EMPTY;
                                                 break;
@@ -527,7 +560,7 @@ public class RedAuto {
                                                 auto.heldstate = PathAuto.BallState.GP;
                                                 break;
                                             case GPP:
-                                                Log.i("20311", "ASSERTION ---- Shouldn't get to hPG, gGPP");
+                                                if (loggingEnabled) Log.i("20311", "ASSERTION ---- Shouldn't get to hPG, gGPP");
                                                 break;
                                         }
                                         break;

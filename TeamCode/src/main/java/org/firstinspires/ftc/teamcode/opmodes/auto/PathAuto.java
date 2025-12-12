@@ -40,6 +40,8 @@ import java.util.LinkedList;
 
 @Autonomous
 public class PathAuto extends LinearOpMode {
+    private static boolean loggingEnabled = false;
+
     boolean done = false;
     Follower follower;
     private Limelight3A camera; //any camera here
@@ -62,10 +64,10 @@ public class PathAuto extends LinearOpMode {
 
     String runAtEndName=null;
     public void setRunAtEnd(Runnable runAtEnd, String name) {
-        Log.i("20311", "at end: " + name);
-        Log.i("20311", "   Game ball order: " + gamestate);
-        Log.i("20311", "   Held ball order: " + heldstate);
-        Log.i("20311", "   Auto state machine state: " + state);
+        if (loggingEnabled) Log.i("20311", "at end: " + name);
+        if (loggingEnabled) Log.i("20311", "   Game ball order: " + gamestate);
+        if (loggingEnabled) Log.i("20311", "   Held ball order: " + heldstate);
+        if (loggingEnabled) Log.i("20311", "   Auto state machine state: " + state);
         this.runAtEnd = runAtEnd;
         this.runAtEndName = name;
     }
@@ -116,7 +118,7 @@ public class PathAuto extends LinearOpMode {
         }
 
         boolean isRed = true;
-        Log.i("20311", "Battery tested");
+        if (loggingEnabled) Log.i("20311", "Battery tested");
         while (!isStarted() && !isStopRequested()) {
             if(gamepad1.dpad_up) telemetry.addLine("UP");
             try {
@@ -161,7 +163,7 @@ public class PathAuto extends LinearOpMode {
 
         follower.setStartingPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
         follower.setPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
-        Log.i("20311", "Initial starting pose " + nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)).toString());
+        if (loggingEnabled) Log.i("20311", "Initial starting pose " + nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)).toString());
         startNextPath("Initialize");
 
         LinkedList<Pose> samples = new LinkedList<>();
@@ -176,7 +178,7 @@ public class PathAuto extends LinearOpMode {
             if (runAtEnd != null && !follower.isBusy()) {
                 tempRun = runAtEnd;
                 runAtEnd = null;
-                Log.i("20311", "EXECUTING " + runAtEndName);
+                if (loggingEnabled) Log.i("20311", "EXECUTING " + runAtEndName);
                 tempRun.run();
             }
 
@@ -184,7 +186,7 @@ public class PathAuto extends LinearOpMode {
 
             if(laststate != state) {
                 laststate=state;
-                Log.i("20311", "AUTOSTATE CHANGED TO: "+state);
+                if (loggingEnabled) Log.i("20311", "AUTOSTATE CHANGED TO: "+state);
             }
             switch (state) {
                 case READY:
@@ -217,47 +219,38 @@ public class PathAuto extends LinearOpMode {
                                 break;
                         }
                     }
-                    if (elapsedTime.seconds() > 0.5) {
-                        if (Math.max(Math.max(gpp, pgp), ppg) == gpp) {
-                            gamestate = BallState.GPP;
-                        }
-                        if (Math.max(Math.max(gpp, pgp), ppg) == ppg) {
-                            gamestate = BallState.PPG;
-                        }
-                        if (Math.max(Math.max(gpp, pgp), ppg) == pgp) {
-                            gamestate = BallState.PGP;
-                        }
-                        state = AutoState.READY;
+                    if (Math.max(Math.max(gpp, pgp), ppg) == gpp) {
+                        gamestate = BallState.GPP;
+                    }
+                    if (Math.max(Math.max(gpp, pgp), ppg) == ppg) {
+                        gamestate = BallState.PPG;
+                    }
+                    if (Math.max(Math.max(gpp, pgp), ppg) == pgp) {
+                        gamestate = BallState.PGP;
                     }
                     break;
                 case SAMPLE_TAGS:
+                    SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                     elapsedTime.reset();
                     samples.clear();
+                    follower.startTeleopDrive(true); // brake
                     state = AutoState.SAMPLE_TAGS_2;
-                case SAMPLE_TAGS_2: /// Wait .6 seconds for robot to stop pathing
-                    if (elapsedTime.seconds() > 0.6) {
-                        setFollowerMaxPower(0);
-                        elapsedTime.reset();
-                        SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
-                        state = AutoState.SAMPLE_TAGS_2b;
-                    }
-                    break;
-                case SAMPLE_TAGS_2b: /// Wait .3 seconds for robot to stop moving
-                    if (elapsedTime.seconds() > 0.3) {
+                case SAMPLE_TAGS_2: /// Wait .2 seconds for robot stop moving
+                    if (elapsedTime.seconds() > 0.2) {
                         elapsedTime.reset();
                         SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                         state = AutoState.SAMPLE_TAGS_3;
                     }
                     break;
-                case SAMPLE_TAGS_3: /// Get apriltag samples for .3 seconds
+                case SAMPLE_TAGS_3: /// Get apriltag samples for up to 2 seconds
                     addSampleIfAvailable(samples);
-                    if (elapsedTime.seconds() > 0.3) {
+                    if (elapsedTime.seconds() > 2 || samples.size() >= 8) {
                         SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                         state = AutoState.SAMPLE_TAGS_4;
                     }
                     else break;
                 case SAMPLE_TAGS_4:
-                    if(samples.size() >= 8) {
+                    if(samples.size() >= 5) {
                         SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, mediumBeep);
                         follower.setPose(getAverageOfBest(samples, 5));
                         ++successfulRecogs;
@@ -311,7 +304,7 @@ public class PathAuto extends LinearOpMode {
                     }
                     break;
                 default:
-                	Log.i("20311", "Should net to this default lksadflaksdf");
+                	if (loggingEnabled) Log.i("20311", "Should net to this default lksadflaksdf");
                 	break;
             }
 
@@ -331,7 +324,7 @@ public class PathAuto extends LinearOpMode {
 //            }
 
             if (amAlive--==0) {
-				Log.i("20311", "Alive and updating robot container");
+				if (loggingEnabled) Log.i("20311", "Alive and updating robot container");
 				amAlive=100;
 			}
             RobotContainer.update();
@@ -355,7 +348,7 @@ public class PathAuto extends LinearOpMode {
 ;;;;;;;;}
 ;;;;;;;;Storage.ORIENTPOSE = follower.getPose().withHeading(follower.getHeading());
 ;;;;;;;;Storage.FIELD_ORIENT_ANGLE = isRed? PI: 0;
-;;;;;;;;Log.i("20311", "Exited the opmode");
+;;;;;;;;if (loggingEnabled) Log.i("20311", "Exited the opmode");
     }
 
     public void setState(AutoState state) {
@@ -364,10 +357,10 @@ public class PathAuto extends LinearOpMode {
 
     public void setNextPath(PathChain nextPath, String name) {
         this.nextPath = nextPath;
-        Log.i("20311", "next path: " + name);
-        Log.i("20311", "   Game ball order: " + gamestate);
-        Log.i("20311", "   Held ball order: " + heldstate);
-        Log.i("20311", "   Auto state machine state: " + state);
+        if (loggingEnabled) Log.i("20311", "next path: " + name);
+        if (loggingEnabled) Log.i("20311", "   Game ball order: " + gamestate);
+        if (loggingEnabled) Log.i("20311", "   Held ball order: " + heldstate);
+        if (loggingEnabled) Log.i("20311", "   Auto state machine state: " + state);
         nextPathName=name;
     }
 
@@ -376,11 +369,11 @@ public class PathAuto extends LinearOpMode {
 
     void startNextPath(String note) {
         if (nextPath != null) {
-            Log.i("20311", "PATHCHAIN: "+nextPathName+" started by startNextPath("+note+")");
+            if (loggingEnabled) Log.i("20311", "PATHCHAIN: "+nextPathName+" started by startNextPath("+note+")");
             follower.followPath(nextPath);
             nextPath = null;
         }
-        else Log.i("20311", "NO NEXT PATHCHAIN after startNextPath("+note+")");
+        else if (loggingEnabled) Log.i("20311", "NO NEXT PATHCHAIN after startNextPath("+note+")");
     }
 
     void spinUp(String note) {
@@ -392,7 +385,7 @@ public class PathAuto extends LinearOpMode {
     }
 
     void spinHalf(String note) {
-        RobotContainer.FLYWHEEL.setRequested(1000, note);
+        RobotContainer.FLYWHEEL.setRequested(1150, note);
     }
 
     int cycleCount = 1;
@@ -427,7 +420,7 @@ public class PathAuto extends LinearOpMode {
         RobotContainer.LOADER.resetShots();
         RobotContainer.LOADER.launch();
         state = AutoState.SHOOTING;
-        Log.i("20311", "EXECUTING auto::launchBalls3");
+        if (loggingEnabled) Log.i("20311", "EXECUTING auto::launchBalls3");
     }
 
     void reorient() {

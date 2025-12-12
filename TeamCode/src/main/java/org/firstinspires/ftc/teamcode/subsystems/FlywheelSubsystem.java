@@ -13,6 +13,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import java.util.function.BooleanSupplier;
 
 public class FlywheelSubsystem {
+    private static boolean loggingEnabled = false;
 
     private final Telemetry telemetry;
     private final DcMotorEx shooter1, shooter2;
@@ -70,7 +71,7 @@ public class FlywheelSubsystem {
         if (isLoaderPermittingSpeedChanges.getAsBoolean()) {
             if(priorspeed != speed) {
             	priorspeed=speed;
-            	Log.i("20311", "Speed was actually set to "+speed);
+            	if (loggingEnabled) Log.i("20311", "Speed was actually set to "+speed);
 	            setVelocity(speed);
 			}
         }
@@ -101,7 +102,7 @@ public class FlywheelSubsystem {
 
     public void setRequested(double speed, String name) {
         this.speed = speed;
-        Log.i("20311", "FLYWHEEL REQUEST speed " + speed +" from "+ name);
+        if (loggingEnabled) Log.i("20311", "FLYWHEEL REQUEST speed " + speed +" from "+ name);
     }
 
 
@@ -123,7 +124,7 @@ public class FlywheelSubsystem {
      * @param runMode The desired run mode.
      */
     private void setRunMode(DcMotor.RunMode runMode){
-        Log.i("20311", "shooter run mode set");
+        if (loggingEnabled) Log.i("20311", "shooter run mode set");
         shooter1.setMode(runMode);
         shooter2.setMode(runMode);
     }
