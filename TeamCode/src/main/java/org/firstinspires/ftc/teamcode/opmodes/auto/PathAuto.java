@@ -84,6 +84,8 @@ public class PathAuto extends LinearOpMode {
 
     int amAlive=100;
 
+    private boolean sort;
+
     @Override
     public void runOpMode() throws InterruptedException {
         camera = hardwareMap.get(Limelight3A.class, "limelight");
@@ -105,6 +107,8 @@ public class PathAuto extends LinearOpMode {
 
         RedAuto.init(follower, this);
         BlueAuto.init(follower, this);
+        RedAutoUnsorted.init(follower, this);
+        BlueAutoUnsorted.init(follower, this);
         if(hardwareMap.get(VoltageSensor.class, "Control Hub").getVoltage() < 12.5) {
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, lowBattery);
@@ -130,6 +134,8 @@ public class PathAuto extends LinearOpMode {
             telemetry.update();
             if (gamepad1.dpad_up) isRed = true;
             if (gamepad1.dpad_down) isRed = false;
+            if (gamepad1.dpad_right) sort = true;
+            if (gamepad1.dpad_left) sort = false;
             if (isRed) {
                 telemetry.addLine("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
                 telemetry.addLine("░░░█████░░░░░██████░░█████░░░░░░");
@@ -147,22 +153,27 @@ public class PathAuto extends LinearOpMode {
                 telemetry.addLine("╚═════╝░╚══════╝░╚═════╝░╚══════");
             }
 
+            if (sort) {
+                telemetry.addLine("sort");
+//                telemetry.addLine("███████╗░██████╗░██████╗░███████");
+//                telemetry.addLine("██╔════╝██╔═══██╗██╔══██╗╚══██╔═");
+//                telemetry.addLine("███████╗██║░░░██║██████╔╝░░░██║░");
+//                telemetry.addLine("╚════██║██║░░░██║██╔══██╗░░░██║░");
+//                telemetry.addLine("███████║╚██████╔╝██║░░██║░░░██║░");
+//                telemetry.addLine("╚══════╝ ╚═════╝ ╚═╝░░╚═╝░░░╚═╝░");
+            } else {
+                telemetry.addLine("12");
+            }
+
             telemetry.addLine("didja adjust the limelight camera");
-
-
-
-
-
-
-
-            telemetry.addLine("if red isnt showing its blue");
 
 
         }
 
         Storage.IS_RED = isRed;
 
-        setNextPath(isRed? RedAuto.START_EJECT_SORT_AUTO: BlueAuto.START_EJECT_SORT_AUTO, "START_EJECT_SORT_AUTO from chosen AUTO");
+        setNextPath(isRed? sort? RedAuto.START_EJECT_SORT_AUTO: RedAutoUnsorted.START_EJECT_SORT_AUTO: sort? BlueAuto.START_EJECT_SORT_AUTO: BlueAutoUnsorted.START_EJECT_SORT_AUTO, "START_EJECT_SORT_AUTO from chosen AUTO");
+
 
         follower.setStartingPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
         follower.setPose(nextPath.firstPath().getPose(0).withHeading(nextPath.firstPath().getHeadingGoal(0)));
